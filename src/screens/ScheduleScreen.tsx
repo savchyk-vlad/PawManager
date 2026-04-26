@@ -2,7 +2,7 @@ import React from 'react';
 import {
   View, Text, ScrollView, StyleSheet, SafeAreaView,
 } from 'react-native';
-import { format, startOfWeek, addDays, isToday } from 'date-fns';
+import { format, startOfWeek, addDays, isToday, isSameDay, parseISO } from 'date-fns';
 import { colors } from '../theme';
 import { useAppStore } from '../store';
 
@@ -21,15 +21,15 @@ export default function ScheduleScreen() {
         </Text>
 
         {weekDays.map((day) => {
-          const dayStr = format(day, 'yyyy-MM-dd');
+          const dayKey = format(day, 'yyyy-MM-dd');
           const dayWalks = walks
-            .filter((w) => w.scheduledAt.startsWith(dayStr))
+            .filter((w) => isSameDay(parseISO(w.scheduledAt), day))
             .sort((a, b) => a.scheduledAt.localeCompare(b.scheduledAt));
 
           const todayStyle = isToday(day);
 
           return (
-            <View key={dayStr} style={styles.dayBlock}>
+            <View key={dayKey} style={styles.dayBlock}>
               <View style={[styles.dayHeader, todayStyle && styles.dayHeaderToday]}>
                 <Text style={[styles.dayName, todayStyle && styles.dayNameToday]}>
                   {format(day, 'EEE')}
@@ -47,8 +47,9 @@ export default function ScheduleScreen() {
                 ) : (
                   dayWalks.map((walk) => {
                     const client = clients.find((c) => c.id === walk.clientId);
-                    if (!client) return null;
-                    const dogs = client.dogs.filter((d) => walk.dogIds.includes(d.id));
+                    const dogs = client
+                      ? client.dogs.filter((d) => walk.dogIds.includes(d.id))
+                      : [];
                     const statusColors: Record<string, string> = {
                       done: colors.accent,
                       scheduled: colors.gold,
@@ -61,10 +62,11 @@ export default function ScheduleScreen() {
                         <View style={[styles.chipDot, { backgroundColor: statusColors[walk.status] }]} />
                         <View style={{ flex: 1 }}>
                           <Text style={styles.chipDogName}>
-                            {dogs.map((d) => d.name).join(' + ')}
+                            {dogs.map((d) => d.name).join(' + ') || 'Walk'}
                           </Text>
                           <Text style={styles.chipMeta}>
-                            {format(new Date(walk.scheduledAt), 'HH:mm')} · {walk.durationMinutes} min · {client.name}
+                            {format(parseISO(walk.scheduledAt), 'HH:mm')} · {walk.durationMinutes} min ·{' '}
+                            {client?.name ?? 'Client'}
                           </Text>
                         </View>
                         <Text style={[styles.chipStatus, { color: statusColors[walk.status] }]}>

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import {
   View, Text, TouchableOpacity, ScrollView, StyleSheet, TextInput, Alert, ActivityIndicator,
 } from 'react-native';
@@ -50,14 +50,68 @@ export default function AddWalkScreen() {
   const insets = useSafeAreaInsets();
   const { clients, addWalk } = useAppStore();
 
-  const [selectedClient, setSelectedClient] = useState<Client | null>(null);
+  const [slots] = useState(() => timeSlots());
+  const [selectedClientId, setSelectedClientId] = useState<string | null>(null);
+  /** Fingerprint so we can re-select the same person after the store replaces temp- ids with uuids. */
+  const [clientMatch, setClientMatch] = useState<{ name: string; phone: string } | null>(null);
   const [selectedDogs, setSelectedDogs] = useState<string[]>([]);
-  const [selectedTime, setSelectedTime] = useState<string>(new Date().toISOString());
+  const [selectedTime, setSelectedTime] = useState<string>(() => {
+    const s = timeSlots();
+    return s[0]?.iso ?? new Date().toISOString();
+  });
   const [duration, setDuration] = useState(30);
   const [notes, setNotes] = useState('');
   const [saving, setSaving] = useState(false);
 
-  const slots = timeSlots();
+  const selectedClient = useMemo((): Client | null => {
+    if (!selectedClientId) return null;
+    const byId = clients.find((c) => c.id === selectedClientId);
+    if (byId) return byId;
+    if (clientMatch) {
+      return (
+        clients.find(
+          (c) => c.name === clientMatch.name && c.phone === clientMatch.phone
+        ) ?? null
+      );
+    }
+    return null;
+  }, [clients, selectedClientId, clientMatch]);
+
+  useEffect(() => {
+    if (!selectedClientId || !String(selectedClientId).startsWith('temp-')) return;
+    if (clients.some((c) => c.id === selectedClientId)) return;
+    if (clientMatch) {
+      const resolved = clients.find(
+        (c) =>
+          !String(c.id).startsWith('temp-') && c.name === clientMatch.name && c.phone === clientMatch.phone
+      );
+      if (resolved) {
+        setSelectedClientId(resolved.id);
+        setSelectedDogs(resolved.dogs.map((d) => d.id));
+        setClientMatch(null);
+        return;
+      }
+    }
+    setSelectedClientId(null);
+    setSelectedDogs([]);
+    setClientMatch(null);
+  }, [clients, selectedClientId, clientMatch]);
+
+  useEffect(() => {
+    if (!selectedClientId) return;
+    const c = clients.find((x) => x.id === selectedClientId);
+    if (!c) return;
+    if (c.dogs.some((d) => String(d.id).startsWith('temp-'))) return;
+    setSelectedDogs((prev) => {
+      if (!prev.length) return prev;
+      if (!prev.some((id) => !c.dogs.some((d) => d.id === id))) return prev;
+      const still = prev.filter((id) => c.dogs.some((d) => d.id === id));
+      const lost = prev.length - still.length;
+      if (lost <= 0) return still;
+      const add = c.dogs.filter((d) => !still.includes(d.id));
+      return [...still, ...add.map((d) => d.id).slice(0, lost)];
+    });
+  }, [clients, selectedClientId]);
 
   const toggleDog = (dogId: string) => {
     setSelectedDogs((prev) =>
@@ -66,14 +120,24 @@ export default function AddWalkScreen() {
   };
 
   const selectClient = (client: Client) => {
-    setSelectedClient(client);
+    setSelectedClientId(client.id);
+    setClientMatch(
+      String(client.id).startsWith('temp-') ? { name: client.name, phone: client.phone } : null
+    );
     setSelectedDogs(client.dogs.map((d) => d.id));
   };
 
-  const canSave = selectedClient && selectedDogs.length > 0;
+  const hasPersistedClientAndDogs = Boolean(
+    selectedClient &&
+    selectedDogs.length > 0 &&
+    !String(selectedClient.id).startsWith('temp-') &&
+    !selectedDogs.some((id) => String(id).includes('temp'))
+  );
+
+  const canSave = hasPersistedClientAndDogs;
 
   const handleSave = async () => {
-    if (!canSave || saving) return;
+    if (!canSave || saving || !selectedClient) return;
     setSaving(true);
     try {
       await addWalk({
@@ -112,9 +176,12 @@ export default function AddWalkScreen() {
 
         {/* Client */}
         <Text style={s.sectionLabel}>CLIENT</Text>
+        {clientMatch && selectedClientId && String(selectedClientId).startsWith('temp-') && (
+          <Text style={s.clientPending}>Saving new client to server…</Text>
+        )}
         <View style={s.card}>
           {clients.map((client, i) => {
-            const active = selectedClient?.id === client.id;
+            const active = Boolean(selectedClient && client.id === selectedClient.id);
             return (
               <TouchableOpacity
                 key={client.id}
@@ -260,6 +327,12 @@ const s = StyleSheet.create({
   sectionLabel: {
     fontSize: 11, fontWeight: '600', letterSpacing: 1.2,
     color: C.textMuted, marginBottom: 8, marginTop: 20,
+  },
+  clientPending: {
+    fontSize: 12,
+    color: C.greenText,
+    marginBottom: 8,
+    marginTop: -4,
   },
 
   card: {

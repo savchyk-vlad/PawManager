@@ -280,12 +280,8 @@ export const useAppStore = create<AppState>((set, get) => ({
     set((state) => ({ walks: [...state.walks, optimistic] }));
 
     try {
-      const created = await createWalk(walk, userId);
-      set((state) => ({
-        walks: state.walks
-          .map((entry) => (entry.id === tempId ? created : entry))
-          .sort((a, b) => a.scheduledAt.localeCompare(b.scheduledAt)),
-      }));
+      await createWalk(walk, userId);
+      await get().loadWalks(userId);
     } catch (e: any) {
       set((state) => ({
         walks: state.walks.filter((entry) => entry.id !== tempId),

@@ -1,12 +1,22 @@
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import {
-  View, Text, ScrollView, TouchableOpacity, StyleSheet, StatusBar, ActivityIndicator, Alert,
+  View,
+  Text,
+  ScrollView,
+  TouchableOpacity,
+  StyleSheet,
+  StatusBar,
+  ActivityIndicator,
+  Alert,
+  RefreshControl,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { useNavigation } from '@react-navigation/native';
+import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
-import { format, differenceInMinutes, isToday } from 'date-fns';
+import {
+  format, differenceInMinutes, parseISO, isValid, isSameDay, isAfter, addDays, endOfDay, isBefore,
+} from 'date-fns';
 import { useAppStore } from '../store';
 import { useAuthStore } from '../store/authStore';
 import { RootStackParamList } from '../navigation';
@@ -49,22 +59,33 @@ function getGreeting() {
   return 'Good evening';
 }
 
-function minutesUntil(iso: string) {
-  return differenceInMinutes(new Date(iso), new Date());
+function parseWalkDate(iso: string | undefined): Date | null {
+  if (!iso) return null;
+  const t = parseISO(iso);
+  return isValid(t) ? t : null;
+}
+
+/** True if this walk’s scheduled time falls on the same local calendar day as `day`. */
+function isWalkOnLocalDay(iso: string | undefined, day: Date) {
+  const t = parseWalkDate(iso);
+  if (!t) return false;
+  return isSameDay(t, day);
 }
 
 function isWithinNextThirtyMinutes(iso: string) {
-  const mins = minutesUntil(iso);
+  const t = parseWalkDate(iso);
+  if (!t) return false;
+  const mins = differenceInMinutes(t, new Date());
   return mins >= 0 && mins <= 30;
 }
 
 /** Today’s non-done walks: order by how close the scheduled time is to now (next / most recent first). */
 function sortByClosestToNow(walks: Walk[], nowMs: number) {
-  return [...walks].sort(
-    (a, b) =>
-      Math.abs(new Date(a.scheduledAt).getTime() - nowMs) -
-      Math.abs(new Date(b.scheduledAt).getTime() - nowMs)
-  );
+  return [...walks].sort((a, b) => {
+    const at = parseWalkDate(a.scheduledAt)?.getTime() ?? 0;
+    const bt = parseWalkDate(b.scheduledAt)?.getTime() ?? 0;
+    return Math.abs(at - nowMs) - Math.abs(bt - nowMs);
+  });
 }
 
 function sortDoneByNewestFirst(walks: Walk[]) {
@@ -91,11 +112,13 @@ function UpNextCard({ walk }: { walk: Walk }) {
   const navigation = useNavigation<Nav>();
   const { clients, startWalk } = useAppStore();
   const client = clients.find((c) => c.id === walk.clientId);
-  if (!client) return null;
-  const dogs = client.dogs.filter((d) => walk.dogIds.includes(d.id));
-  const dogNames = dogs.map((d) => d.name).join(' & ');
+  const dogs = client
+    ? client.dogs.filter((d) => walk.dogIds.includes(d.id))
+    : [];
+  const dogNames = dogs.map((d) => d.name).join(' & ') || 'Walk';
   const dogEmoji = dogs[0]?.emoji ?? '🐕';
-  const time = format(new Date(walk.scheduledAt), 'h:mm a');
+  const t = parseWalkDate(walk.scheduledAt);
+  const time = t ? format(t, 'h:mm a') : '—';
 
   return (
     <TouchableOpacity
@@ -109,7 +132,7 @@ function UpNextCard({ walk }: { walk: Walk }) {
       <View style={{ flex: 1 }}>
         <Text style={s.featuredName}>{dogNames}</Text>
         <Text style={s.featuredMeta}>
-          {client.name} · {time} · {walk.durationMinutes} min
+          {client?.name ?? 'Client'} · {time} · {walk.durationMinutes} min
         </Text>
       </View>
       <TouchableOpacity
@@ -150,10 +173,10 @@ function ActiveWalkCard({ walk }: { walk: Walk }) {
     return () => clearInterval(interval);
   }, [walk.startedAt]);
 
-  if (!client) return null;
-
-  const dogs = client.dogs.filter((d) => walk.dogIds.includes(d.id));
-  const dogNames = dogs.map((d) => d.name).join(' & ');
+  const dogs = client
+    ? client.dogs.filter((d) => walk.dogIds.includes(d.id))
+    : [];
+  const dogNames = dogs.map((d) => d.name).join(' & ') || 'Walk';
   const dogEmoji = dogs[0]?.emoji ?? '🐕';
 
   return (
@@ -176,7 +199,7 @@ function ActiveWalkCard({ walk }: { walk: Walk }) {
         <View style={{ flex: 1 }}>
           <Text style={s.activeName}>{dogNames}</Text>
           <Text style={s.activeMeta}>
-            {client.name} · {walk.durationMinutes} min walk
+            {client?.name ?? 'Client'} · {walk.durationMinutes} min walk
           </Text>
         </View>
         <View style={s.activeChevron}>
@@ -187,16 +210,32 @@ function ActiveWalkCard({ walk }: { walk: Walk }) {
   );
 }
 
-function WalkRow({ walk, isLast }: { walk: Walk; isLast: boolean }) {
+function WalkRow({
+  walk,
+  isLast,
+  scheduleLabel = 'time',
+}: {
+  walk: Walk;
+  isLast: boolean;
+  /** "time" = today only; "date" = include weekday + date (for Upcoming) */
+  scheduleLabel?: 'time' | 'date';
+}) {
   const navigation = useNavigation<Nav>();
   const { clients, startWalk } = useAppStore();
   const client = clients.find((c) => c.id === walk.clientId);
-  if (!client) return null;
-  const dogs = client.dogs.filter((d) => walk.dogIds.includes(d.id));
-  const dogNames = dogs.map((d) => d.name).join(' & ');
+  const dogs = client
+    ? client.dogs.filter((d) => walk.dogIds.includes(d.id))
+    : [];
+  const dogNames = dogs.map((d) => d.name).join(' & ') || 'Walk';
   const dogEmoji = dogs[0]?.emoji ?? '🐕';
-  const time = format(new Date(walk.scheduledAt), 'h:mm a');
+  const t = parseWalkDate(walk.scheduledAt);
+  const timePart = t ? format(t, 'h:mm a') : '—';
+  const datePart = t && scheduleLabel === 'date' ? format(t, 'EEE, MMM d') : null;
   const isDone = walk.status === 'done';
+  const scheduleText =
+    scheduleLabel === 'date' && datePart
+      ? `${datePart} · ${timePart}`
+      : timePart;
 
   return (
     <View style={[s.walkRow, !isLast && s.walkRowBorder]}>
@@ -206,7 +245,7 @@ function WalkRow({ walk, isLast }: { walk: Walk; isLast: boolean }) {
       <View style={{ flex: 1 }}>
         <Text style={s.walkName}>{dogNames}</Text>
         <Text style={s.walkMeta}>
-          {client.name} · {time} · {walk.durationMinutes} min
+          {client?.name ?? 'Client'} · {scheduleText} · {walk.durationMinutes} min
         </Text>
       </View>
       {isDone ? (
@@ -233,8 +272,9 @@ function WalkRow({ walk, isLast }: { walk: Walk; isLast: boolean }) {
 
 export default function DashboardScreen() {
   const navigation = useNavigation<Nav>();
-  const { walks, clients, clientsLoading } = useAppStore();
-  const { user } = useAuthStore();
+  const { walks, clients, clientsLoading, loadWalks, loadClients } = useAppStore();
+  const { user, session } = useAuthStore();
+  const [refreshing, setRefreshing] = useState(false);
 
   const fullName = (user?.user_metadata?.full_name as string | undefined) ?? '';
   const firstName = fullName.split(' ')[0] || 'there';
@@ -245,13 +285,44 @@ export default function DashboardScreen() {
     .slice(0, 2)
     .toUpperCase() || '?';
 
-  const clientIds = new Set(clients.map((c) => c.id));
   const now = new Date();
   const nowMs = now.getTime();
+  const userId = session?.user?.id;
+
+  useFocusEffect(
+    useCallback(() => {
+      if (userId) {
+        void loadWalks(userId);
+      }
+    }, [userId, loadWalks])
+  );
+
+  const onRefresh = useCallback(async () => {
+    if (!userId) return;
+    setRefreshing(true);
+    try {
+      await Promise.all([loadWalks(userId), loadClients(userId)]);
+    } finally {
+      setRefreshing(false);
+    }
+  }, [userId, loadWalks, loadClients]);
 
   const todayWalks = walks
-    .filter((w) => isToday(new Date(w.scheduledAt)) && clientIds.has(w.clientId))
+    .filter((w) => isWalkOnLocalDay(w.scheduledAt, now))
     .sort((a, b) => a.scheduledAt.localeCompare(b.scheduledAt));
+
+  const upcomingNotToday = sortByClosestToNow(
+    walks.filter((w) => {
+      if (w.status !== 'scheduled') return false;
+      const t = parseWalkDate(w.scheduledAt);
+      if (!t) return false;
+      if (isWalkOnLocalDay(w.scheduledAt, now)) return false;
+      if (!isAfter(t, now)) return false;
+      return isBefore(t, endOfDay(addDays(now, 30)));
+    }),
+    nowMs
+  );
+  const upcomingNotTodayList = upcomingNotToday.slice(0, 6);
 
   const earnedToday = todayWalks
     .filter((w) => w.status === 'done')
@@ -324,7 +395,16 @@ export default function DashboardScreen() {
       <ScrollView
         showsVerticalScrollIndicator={false}
         style={{ flex: 1, backgroundColor: C.bg }}
-        contentContainerStyle={{ paddingBottom: Math.max(insets.bottom, 0) + SCROLL_BOTTOM_PAD }}
+        contentContainerStyle={{ paddingBottom: Math.max(insets.bottom, 0) + SCROLL_BOTTOM_PAD, flexGrow: 1 }}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            tintColor={C.greenText}
+            colors={[C.greenText]}
+            progressBackgroundColor={C.walkListCard}
+          />
+        }
       >
 
         {/* ── Content ── */}
@@ -388,6 +468,25 @@ export default function DashboardScreen() {
             </View>
           )}
 
+          {/* Next 30 days, not today (also surfaces walks if the “today” filter was off) */}
+          {upcomingNotTodayList.length > 0 && (
+            <View style={{ marginTop: doneTodayWalks.length > 0 || listWalks.length > 0 ? 24 : 0 }}>
+              <View style={s.sectionHeader}>
+                <Text style={s.sectionLabel}>UPCOMING</Text>
+              </View>
+              <View style={s.walkListCard}>
+                {upcomingNotTodayList.map((w, i) => (
+                  <WalkRow
+                    key={w.id}
+                    walk={w}
+                    isLast={i === upcomingNotTodayList.length - 1}
+                    scheduleLabel="date"
+                  />
+                ))}
+              </View>
+            </View>
+          )}
+
           {totalUnpaid > 0 && (
             <View style={[s.walkListCard, { marginTop: 16 }]}>
               <View style={s.unpaidBar}>
@@ -403,7 +502,9 @@ export default function DashboardScreen() {
             </View>
           )}
 
-          {todayWalks.length === 0 && (
+          {todayWalks.length === 0 &&
+            upcomingNotTodayList.length === 0 &&
+            activeWalks.length === 0 && (
             <View style={s.empty}>
               <Text style={{ fontSize: 40, marginBottom: 12 }}>🐾</Text>
               <Text style={s.emptyText}>No walks scheduled today</Text>
