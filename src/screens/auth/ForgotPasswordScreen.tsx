@@ -1,8 +1,6 @@
 import React, { useState } from 'react';
-import {
-  View, Text, TouchableOpacity, StyleSheet,
-  KeyboardAvoidingView, Platform, ScrollView,
-} from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { FormKeyboardScrollView } from '../../components/FormKeyboardScrollView';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -37,15 +35,12 @@ export default function ForgotPasswordScreen() {
 
   return (
     <SafeAreaView style={s.container}>
-      <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      <FormKeyboardScrollView
         style={{ flex: 1 }}
+        contentContainerStyle={s.content}
+        keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
       >
-        <ScrollView
-          contentContainerStyle={s.content}
-          keyboardShouldPersistTaps="handled"
-          showsVerticalScrollIndicator={false}
-        >
           <TouchableOpacity style={s.backBtn} onPress={() => navigation.goBack()}>
             <Text style={s.backText}>← Back</Text>
           </TouchableOpacity>
@@ -92,8 +87,7 @@ export default function ForgotPasswordScreen() {
               <Text style={s.signInLinkBold}>Sign in</Text>
             </Text>
           </TouchableOpacity>
-        </ScrollView>
-      </KeyboardAvoidingView>
+      </FormKeyboardScrollView>
     </SafeAreaView>
   );
 }

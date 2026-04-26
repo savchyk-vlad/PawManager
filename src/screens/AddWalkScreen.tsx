@@ -1,7 +1,14 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useRef } from 'react';
 import {
-  View, Text, TouchableOpacity, ScrollView, StyleSheet, TextInput, Alert, ActivityIndicator,
+  View,
+  Text,
+  TouchableOpacity,
+  StyleSheet,
+  TextInput,
+  Alert,
+  ActivityIndicator,
 } from 'react-native';
+import { FormKeyboardScrollView } from '../components/FormKeyboardScrollView';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -62,6 +69,7 @@ export default function AddWalkScreen() {
   const [duration, setDuration] = useState(30);
   const [notes, setNotes] = useState('');
   const [saving, setSaving] = useState(false);
+  const scrollRef = useRef<React.ComponentRef<typeof FormKeyboardScrollView> | null>(null);
 
   const selectedClient = useMemo((): Client | null => {
     if (!selectedClientId) return null;
@@ -172,7 +180,15 @@ export default function AddWalkScreen() {
         </TouchableOpacity>
       </View>
 
-      <ScrollView style={{ flex: 1 }} contentContainerStyle={s.content} showsVerticalScrollIndicator={false} keyboardDismissMode="on-drag" keyboardShouldPersistTaps="handled">
+      <FormKeyboardScrollView
+        ref={scrollRef}
+        style={{ flex: 1 }}
+        contentContainerStyle={[s.content, { paddingBottom: insets.bottom + 40 }]}
+        showsVerticalScrollIndicator={false}
+        smoothKeyboardHide
+        extraHeight={100}
+        extraScrollHeight={48}
+      >
 
         {/* Client */}
         <Text style={s.sectionLabel}>CLIENT</Text>
@@ -239,8 +255,7 @@ export default function AddWalkScreen() {
 
         {/* Time */}
         <Text style={s.sectionLabel}>TIME</Text>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 16 }}>
-          <View style={{ flexDirection: 'row', gap: 8, paddingHorizontal: 0 }}>
+        <View style={s.timeSlotsWrap}>
             {slots.map((slot) => {
               const active = slot.iso === selectedTime ||
                 (selectedTime && new Date(selectedTime).getTime() === new Date(slot.iso).getTime());
@@ -256,8 +271,7 @@ export default function AddWalkScreen() {
                 </TouchableOpacity>
               );
             })}
-          </View>
-        </ScrollView>
+        </View>
 
         {/* Duration */}
         <Text style={s.sectionLabel}>DURATION</Text>
@@ -284,6 +298,16 @@ export default function AddWalkScreen() {
             onChangeText={setNotes}
             multiline
             numberOfLines={3}
+            textAlignVertical="top"
+            blurOnSubmit={false}
+            onFocus={() => {
+              setTimeout(() => {
+                const v = scrollRef.current as
+                  | { update?: () => void }
+                  | null;
+                v?.update?.();
+              }, 100);
+            }}
           />
         </View>
 
@@ -295,7 +319,7 @@ export default function AddWalkScreen() {
         >
           {saving ? <ActivityIndicator color="white" /> : <Text style={s.saveFullBtnText}>Schedule Walk</Text>}
         </TouchableOpacity>
-      </ScrollView>
+      </FormKeyboardScrollView>
     </View>
   );
 }
@@ -366,6 +390,13 @@ const s = StyleSheet.create({
     alignItems: 'center', justifyContent: 'center',
   },
   checkboxActive: { backgroundColor: C.green, borderColor: C.green },
+
+  timeSlotsWrap: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+    marginBottom: 16,
+  },
 
   timeChip: {
     paddingHorizontal: 16, paddingVertical: 10,

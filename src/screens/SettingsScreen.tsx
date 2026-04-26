@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
 import {
-  View, Text, TextInput, TouchableOpacity, ScrollView,
+  View, Text, TextInput, TouchableOpacity,
   StyleSheet, SafeAreaView, Switch, Alert,
 } from 'react-native';
+import { FormKeyboardScrollView } from '../components/FormKeyboardScrollView';
 import { colors, radius } from '../theme';
 import { useSettingsStore, WalkDuration, ReminderTiming } from '../store/settingsStore';
 import { useAuthStore } from '../store/authStore';
@@ -82,7 +83,12 @@ export default function SettingsScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+      <FormKeyboardScrollView
+        style={{ flex: 1 }}
+        contentContainerStyle={styles.content}
+        showsVerticalScrollIndicator={false}
+        viewIsInsideTabBar
+      >
         <Text style={styles.title}>Settings</Text>
 
         {/* Business */}
@@ -191,7 +197,7 @@ export default function SettingsScreen() {
         </View>
 
         <Text style={styles.version}>PawManager v1.0.0</Text>
-      </ScrollView>
+      </FormKeyboardScrollView>
     </SafeAreaView>
   );
 }

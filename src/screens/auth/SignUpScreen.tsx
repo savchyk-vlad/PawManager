@@ -1,13 +1,6 @@
 import React, { useState } from "react";
-import {
-  View,
-  Text,
-  TouchableOpacity,
-  StyleSheet,
-  KeyboardAvoidingView,
-  Platform,
-  ScrollView,
-} from "react-native";
+import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
+import { FormKeyboardScrollView } from "../../components/FormKeyboardScrollView";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
@@ -83,13 +76,12 @@ export default function SignUpScreen() {
 
   return (
     <SafeAreaView style={s.container}>
-      <KeyboardAvoidingView
-        behavior={Platform.OS === "ios" ? "padding" : undefined}
-        style={{ flex: 1 }}>
-        <ScrollView
-          contentContainerStyle={s.content}
-          keyboardShouldPersistTaps="handled"
-          showsVerticalScrollIndicator={false}>
+      <FormKeyboardScrollView
+        style={{ flex: 1 }}
+        contentContainerStyle={s.content}
+        keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
+      >
           <TouchableOpacity
             style={s.backBtn}
             onPress={() => navigation.goBack()}>
@@ -160,8 +152,7 @@ export default function SignUpScreen() {
             <Text style={s.termsLink}>Terms</Text> and{" "}
             <Text style={s.termsLink}>Privacy Policy</Text>
           </Text>
-        </ScrollView>
-      </KeyboardAvoidingView>
+      </FormKeyboardScrollView>
     </SafeAreaView>
   );
 }

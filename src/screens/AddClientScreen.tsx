@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import {
-  View, Text, TouchableOpacity, StyleSheet, TextInput, ScrollView, Alert, ActivityIndicator,
+  View, Text, TouchableOpacity, StyleSheet, TextInput, Alert, ActivityIndicator,
 } from 'react-native';
+import { FormKeyboardScrollView } from '../components/FormKeyboardScrollView';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
@@ -127,12 +128,11 @@ export default function AddClientScreen() {
         </TouchableOpacity>
       </View>
 
-      <ScrollView
+      <FormKeyboardScrollView
         style={{ flex: 1 }}
         contentContainerStyle={[s.content, { paddingBottom: insets.bottom + 40 }]}
         showsVerticalScrollIndicator={false}
-        keyboardShouldPersistTaps="handled"
-        keyboardDismissMode="on-drag"
+        smoothKeyboardHide
       >
         {/* Client info */}
         <Text style={s.sectionLabel}>CLIENT INFO</Text>
@@ -153,19 +153,17 @@ export default function AddClientScreen() {
             {/* Emoji row */}
             <View style={s.emojiRow}>
               <Text style={s.emojiLabel}>ICON</Text>
-              <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-                <View style={{ flexDirection: 'row', gap: 8, paddingVertical: 4 }}>
-                  {DOG_EMOJIS.map((e) => (
-                    <TouchableOpacity
-                      key={e}
-                      style={[s.emojiChip, dog.emoji === e && s.emojiChipActive]}
-                      onPress={() => updateDog(i, 'emoji', e)}
-                    >
-                      <Text style={{ fontSize: 20 }}>{e}</Text>
-                    </TouchableOpacity>
-                  ))}
-                </View>
-              </ScrollView>
+              <View style={s.emojiGrid}>
+                {DOG_EMOJIS.map((e) => (
+                  <TouchableOpacity
+                    key={e}
+                    style={[s.emojiChip, dog.emoji === e && s.emojiChipActive]}
+                    onPress={() => updateDog(i, 'emoji', e)}
+                  >
+                    <Text style={{ fontSize: 20 }}>{e}</Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
             </View>
             <View style={s.cardDivider} />
             <Field
@@ -207,7 +205,7 @@ export default function AddClientScreen() {
         >
           <Text style={s.saveFullBtnText}>Add Client</Text>
         </TouchableOpacity>
-      </ScrollView>
+      </FormKeyboardScrollView>
     </View>
   );
 }
@@ -259,6 +257,7 @@ const s = StyleSheet.create({
   cardDivider: { height: StyleSheet.hairlineWidth, backgroundColor: C.border, marginHorizontal: 14 },
 
   emojiRow: { paddingHorizontal: 14, paddingVertical: 12 },
+  emojiGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, paddingVertical: 4 },
   emojiLabel: {
     fontSize: 11, fontWeight: '600', letterSpacing: 0.8,
     color: C.textMuted, marginBottom: 8, textTransform: 'uppercase',

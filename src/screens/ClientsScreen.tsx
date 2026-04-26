@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import {
-  View, Text, TouchableOpacity, StyleSheet, TextInput, StatusBar, FlatList,
+  View, Text, TouchableOpacity, StyleSheet, TextInput, StatusBar,
 } from 'react-native';
+import { FormKeyboardFlatList } from '../components/FormKeyboardScrollView';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -124,12 +125,14 @@ export default function ClientsScreen() {
       </View>
 
       {/* List */}
-      <FlatList
+      <FormKeyboardFlatList
         data={filtered}
         keyExtractor={(item) => item.id}
         renderItem={({ item, index }) => <ClientCard client={item} index={index} />}
         contentContainerStyle={s.listContent}
+        style={{ flex: 1 }}
         showsVerticalScrollIndicator={false}
+        viewIsInsideTabBar
         ListEmptyComponent={
           <View style={s.empty}>
             <Text style={{ fontSize: 36, marginBottom: 12 }}>🐾</Text>
