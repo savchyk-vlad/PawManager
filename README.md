@@ -1,20 +1,34 @@
 # PawManager
 
-A React Native (Expo) app for **dog walking businesses**: clients and dogs, scheduling walks, tracking active walks, and sign-in with Supabase. State is handled with Zustand; data lives in **Supabase** with row-level security (see `supabase/migrations/`).
+A React Native (**Expo**) app for **dog walking businesses**: clients and dogs, scheduling walks, tracking walks and payments, and account settings. Auth and data use **Supabase** (Auth + Postgres with RLS). Client state lives in **Zustand**; schema and policies are in `supabase/migrations/`.
 
 ## Tech stack
 
-- **Expo** ~54, **TypeScript**
-- **React Navigation** (native stack + bottom tabs)
-- **Zustand** for client/walks/auth state
-- **Supabase** (Auth + Postgres)
-- **date-fns**, **expo-notifications** (and other Expo modules per `package.json`)
+- **Expo** ~54, **React** 19, **React Native** 0.81, **TypeScript**
+- **React Navigation** — native stack + bottom tabs (`src/navigation/`)
+- **Zustand** — clients, walks, settings, auth
+- **Supabase** — `@supabase/supabase-js`
+- **date-fns**, **react-native-svg**, **expo-notifications**, **expo-background-fetch**, and other modules listed in `package.json`
+
+## Main navigation
+
+After sign-in, the **bottom tabs** (left → right) are:
+
+| Tab        | Notes                                      |
+| ---------- | ------------------------------------------ |
+| Clients    | Client list, search, unpaid filter         |
+| Schedule   | Calendar and day carousel for walks        |
+| Walks      | Today / upcoming / missed (default tab)    |
+| Payments   | Earned, unpaid clients                     |
+| Profile    | Account, business defaults, support        |
+
+Modals and stacks (e.g. client detail, active walk, add/edit walk) sit above the tab navigator.
 
 ## Requirements
 
-- Node.js 18+ (use current LTS)
-- npm
-- For device builds: Xcode (iOS), Android Studio (Android), or [Expo Go](https://expo.dev/go) for quick dev
+- **Node.js** 18+ (LTS recommended)
+- **npm**
+- **iOS / Android:** Xcode / Android Studio, or **[Expo Go](https://expo.dev/go)** for quick development
 
 ## Install and run
 
@@ -23,7 +37,7 @@ npm install
 npm start
 ```
 
-From the dev menu, open **iOS simulator**, **Android emulator**, or scan the QR code for Expo Go. Native projects live under `ios/` when you use `expo prebuild` / `expo run:*`.
+Then open **iOS Simulator**, **Android Emulator**, or scan the QR code in **Expo Go**. Native directories appear after `expo prebuild` / `expo run:*`.
 
 ```bash
 npm run ios
@@ -31,38 +45,64 @@ npm run android
 npm run web
 ```
 
+## NPM scripts
+
+| Script            | Purpose                                      |
+| ----------------- | -------------------------------------------- |
+| `npm start`       | Start Expo dev server (`expo start`)         |
+| `npm run ios`     | Run on iOS (`expo run:ios`)                  |
+| `npm run android` | Run on Android (`expo run:android`)        |
+| `npm run web`     | Web target (`expo start --web`)              |
+| `npm test`        | Unit tests (`tsx --test src/**/*.test.ts`)   |
+| `npm run check:env` | Verify `.env` / Supabase vars are set    |
+| `npm run clean:cache` | Clear caches (see `scripts/clean-cache.js`) |
+| `npm run prepare` | Husky git hooks (after `npm install`)      |
+
+Typecheck locally:
+
+```bash
+npx tsc --noEmit
+```
+
 ## Configuration
 
-1. **Copy** `.env.example` to **`.env`** in the project root. Prefer **`EXPO_PUBLIC_*` variables** (see [Expo env docs](https://docs.expo.dev/guides/environment-variables/)) — they are loaded by `npx expo start` and inlined into the app; this avoids “empty `expo.extra`” in dev. Optional legacy names (`SUPABASE_URL`, etc.) are still read by `app.config.js` as a fallback.
+1. Create **`.env`** in the **project root** (same folder as `package.json`). If the repo provides **`.env.example`**, copy it: `cp .env.example .env`. Set at least:
 
-2. **`app.config.js`** loads **`.env` from the project root** (same folder as this file) and also maps both naming styles into **`expo.extra`**. Runtime reads **`src/lib/expoEnv.ts`**, which uses `expo.extra` and `EXPO_PUBLIC_*` from Metro.
+   - **`EXPO_PUBLIC_SUPABASE_URL`** and **`EXPO_PUBLIC_SUPABASE_ANON_KEY`**  
+   - Or legacy names: **`SUPABASE_URL`** / **`SUPABASE_ANON_KEY`**
 
-3. **`.env` is gitignored** (so it may not show in the Explorer). Open it with **File → Open** or **Cmd/Ctrl + P** and type **`.env`**, or in a terminal: `code .env` / `open -e .env`. For **EAS Build**, set the same variable names in [EAS environment variables](https://docs.expo.dev/build-reference/variables/).
+   Prefer **`EXPO_PUBLIC_*`** — see [Expo environment variables](https://docs.expo.dev/guides/environment-variables/).
 
-4. **Verify** with `npm run check:env` (no secret output).
+2. **`app.config.js`** loads `.env` and maps values into **`expo.extra`**. Runtime code uses **`src/lib/expoEnv.ts`** (Metro-inlined `EXPO_PUBLIC_*` and `expo.extra`).
 
-5. After changing `.env`, reload the app; if the old values stick, run **`npx expo start -c`**. The repo includes **`babel.config.js`** and **`metro.config.js`** so the Expo toolchain can inline `EXPO_PUBLIC_*` the same on simulators and devices.
+3. **`.env` is gitignored.** Open it via your editor (e.g. **Cmd/Ctrl+P** → `.env`) or `open .env`. For **EAS Build**, set the same keys in [EAS environment variables](https://docs.expo.dev/build-reference/variables/).
 
-6. **Physical phone + Expo Go:** The **JavaScript bundle is built on your computer**; `.env` must be on the **PC/Mac running `npx expo start`**, not on the phone. The phone only loads the bundle over the network. If the app shows a red error about Supabase env, fix `.env` on the dev machine, then **`npx expo start -c`**, and reload. If the phone **cannot open the project at all** (connection error): use the **same Wi‑Fi** as the computer, allow **“Local network”** for Expo Go (iOS), or start with a tunnel: **`npx expo start --tunnel`**. For **auth redirects**, add your app’s URLs in the [Supabase Auth URL config](https://supabase.com/docs/guides/auth) and Google OAuth (see `scheme` in `app.config.js` / `pawmanager`).
+4. Run **`npm run check:env`** (no secrets printed).
 
-If these values were ever committed in an old `app.json`, **rotate** the Supabase anon key and any OAuth client secrets in the provider consoles, then update `.env` only.
+5. After changing `.env`, reload the app; if values stick, run **`npx expo start -c`**. The repo includes **`babel.config.js`** and **`metro.config.js`** for consistent inlining.
 
-Apply database changes with the SQL in `supabase/migrations/` (e.g. `001_clients_dogs.sql`, `002_walks.sql`) in your Supabase project.
+6. **Phone + Expo Go:** The bundle is built on your **computer**; `.env` lives on the machine running `expo start`, not on the phone. Fix env there, then **`npx expo start -c`**. Connection issues: same Wi‑Fi, Local Network permission (iOS), or **`npx expo start --tunnel`**. Configure **Supabase Auth URLs** and OAuth per [Supabase Auth](https://supabase.com/docs/guides/auth) and your `scheme` in `app.config.js`.
 
-## Project layout (high level)
+If Supabase vars are missing at startup, the app may show **`MissingConfigScreen`** with setup steps instead of the main UI.
+
+Rotate keys if they were ever committed; apply DB changes from **`supabase/migrations/`** in your Supabase project.
+
+## Project layout
 
 | Path | Purpose |
-|------|--------|
-| `app.config.js` | Expo app config and `expo.extra` (env-backed); there is no `app.json` |
-| `App.tsx` | Root: safe area, auth refresh, navigation |
-| `src/navigation/` | Tab + stack navigators |
-| `src/screens/` | Feature screens (dashboard, clients, schedule, etc.) |
-| `src/lib/` | Supabase client, services (`clientsService`, `walksService`, …) |
+|------|---------|
+| `App.tsx` | Root: providers, navigation gate, missing-config handling |
+| `app.config.js` | Expo config, `expo.extra`, env wiring |
+| `src/navigation/` | Stack + tab navigators, types |
+| `src/screens/` | Feature screens (often `ScreenName/index.tsx` + `components/`) |
+| `src/components/` | Shared UI (forms, sheets, auth blocks, …) |
+| `src/lib/` | Supabase client, services, scheduling helpers, metrics |
 | `src/store/` | Zustand stores |
-| `src/theme/` | Design tokens / theme |
-| `supabase/migrations/` | SQL schema and RLS policies |
+| `src/theme/` | Design tokens / colors |
+| `supabase/migrations/` | SQL schema and RLS |
+| `scripts/` | `verify-env.js`, `clean-cache.js` |
 
-More granular roadmap and checklists: `TASKS.md`.
+Further tasks and notes: **`TASKS.md`**.
 
 ## License
 
