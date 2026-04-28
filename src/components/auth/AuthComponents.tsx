@@ -82,7 +82,7 @@ export function GoogleButton({
       disabled={loading}
       activeOpacity={0.85}>
       {loading ? (
-        <ActivityIndicator color={dc.text.primary} size="small" />
+        <ActivityIndicator color={dc.text} size="small" />
       ) : (
         <>
           <SVGComponent />
@@ -115,7 +115,7 @@ export function AuthInput(props: TextInputProps) {
     <TextInput
       {...props}
       style={[s.input, isFocused && s.inputFocused, props.style]}
-      placeholderTextColor={dc.text.tertiary}
+      placeholderTextColor={dc.textMuted}
       onFocus={(e) => {
         setFocused(true);
         props.onFocus?.(e);
@@ -176,7 +176,7 @@ const s = StyleSheet.create({
   primaryBtn: {
     height: 56,
     borderRadius: dr.md,
-    backgroundColor: dc.brand.dark,
+    backgroundColor: dc.greenDeep,
     alignItems: "center",
     justifyContent: "center",
     width: "100%",
@@ -186,7 +186,7 @@ const s = StyleSheet.create({
   googleBtn: {
     height: 56,
     borderRadius: dr.md,
-    backgroundColor: dc.surface.base,
+    backgroundColor: dc.bg,
     borderWidth: 1,
     borderColor: dc.border,
     flexDirection: "row",
@@ -195,32 +195,32 @@ const s = StyleSheet.create({
     gap: 10,
     width: "100%",
   },
-  googleLabel: { fontSize: 15, fontWeight: "500", color: dc.text.primary },
+  googleLabel: { fontSize: 15, fontWeight: "500", color: dc.text },
 
   formLabel: {
     fontSize: 12,
     fontWeight: "600",
     textTransform: "uppercase",
     letterSpacing: 0.6,
-    color: dc.text.tertiary,
+    color: dc.textMuted,
   },
   formLabelOptional: {
     fontSize: 12,
     fontWeight: "400",
-    color: dc.text.tertiary,
+    color: dc.textMuted,
   },
 
   input: {
     height: 52,
     borderRadius: dr.sm,
-    backgroundColor: dc.surface.input,
+    backgroundColor: dc.surfaceHigh,
     borderWidth: 1,
     borderColor: dc.border,
     paddingHorizontal: 14,
     fontSize: 15,
-    color: dc.text.primary,
+    color: dc.text,
   },
-  inputFocused: { borderColor: dc.brand.dark },
+  inputFocused: { borderColor: dc.greenDeep },
 
   divider: {
     flexDirection: "row",
@@ -231,7 +231,7 @@ const s = StyleSheet.create({
   dividerLine: { flex: 1, height: 1, backgroundColor: dc.border },
   dividerText: {
     fontSize: 12,
-    color: dc.text.tertiary,
+    color: dc.textMuted,
     paddingHorizontal: 12,
   },
 
@@ -239,7 +239,7 @@ const s = StyleSheet.create({
     width: 48,
     height: 48,
     borderRadius: 14,
-    backgroundColor: dc.brand.dark,
+    backgroundColor: dc.greenDeep,
     alignItems: "center",
     justifyContent: "center",
   },
@@ -247,14 +247,14 @@ const s = StyleSheet.create({
     fontSize: 22,
     fontWeight: "700",
     letterSpacing: -0.5,
-    color: dc.text.primary,
+    color: dc.text,
   },
 
   errorBox: {
-    backgroundColor: "#FDECEA",
+    backgroundColor: dc.redSubtle,
     borderRadius: dr.sm,
     padding: 12,
     marginBottom: 4,
   },
-  errorText: { color: "#C0392B", fontSize: 13 },
+  errorText: { color: dc.redDefault, fontSize: 13 },
 });

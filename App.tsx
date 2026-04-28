@@ -3,6 +3,7 @@ import React, { useEffect } from 'react';
 import { AppState, AppStateStatus } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import Navigation from './src/navigation';
 import MissingConfigScreen from './src/screens/MissingConfigScreen';
 import { isSupabaseConfigured } from './src/lib/expoEnv';
@@ -21,19 +22,32 @@ export default function App() {
     return () => subscription.remove();
   }, []);
 
+  useEffect(() => {
+    if (!isSupabaseConfigured) return;
+    void import('./src/lib/backgroundTasks').then((m) =>
+      m.registerBackgroundFetchAsync().catch(() => {
+        /* dev client / unsupported */
+      })
+    );
+  }, []);
+
   if (!isSupabaseConfigured) {
     return (
-      <SafeAreaProvider>
-        <StatusBar style="dark" />
-        <MissingConfigScreen />
-      </SafeAreaProvider>
+      <GestureHandlerRootView style={{ flex: 1 }}>
+        <SafeAreaProvider>
+          <StatusBar style="dark" />
+          <MissingConfigScreen />
+        </SafeAreaProvider>
+      </GestureHandlerRootView>
     );
   }
 
   return (
-    <SafeAreaProvider>
-      <StatusBar style="dark" />
-      <Navigation />
-    </SafeAreaProvider>
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <SafeAreaProvider>
+        <StatusBar style="dark" />
+        <Navigation />
+      </SafeAreaProvider>
+    </GestureHandlerRootView>
   );
 }

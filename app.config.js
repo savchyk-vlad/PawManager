@@ -42,6 +42,7 @@ const config = {
     'expo-web-browser',
     'expo-apple-authentication',
     'expo-secure-store',
+    '@react-native-community/datetimepicker',
   ],
   extra: {
     supabaseUrl:

@@ -1,5 +1,6 @@
 export type WalkStatus = 'scheduled' | 'in_progress' | 'done' | 'cancelled';
-export type PaymentStatus = 'unpaid' | 'paid';
+export type PaymentStatus = 'unpaid' | 'paid' | 'no_pay';
+export type DogTraitType = 'positive' | 'warning' | 'red';
 
 export interface Dog {
   id: string;
@@ -8,11 +9,12 @@ export interface Dog {
   age: number;
   weight: number;
   emoji: string;
-  traits: { label: string; type: 'positive' | 'warning' }[];
+  traits: { label: string; type: DogTraitType }[];
   vet: string;
   vetPhone: string;
   medical: string;
   keyLocation: string;
+  isDeleted?: boolean;
 }
 
 export interface Client {
@@ -32,6 +34,10 @@ export interface Walk {
   durationMinutes: number;
   status: WalkStatus;
   paymentStatus: PaymentStatus;
+  /** When set, billing uses this $/walk unit for every dog (uniform custom rate). Ignored if `perDogPrices` is set. */
+  pricePerWalkOverride?: number;
+  /** When set (non-empty), each dog id maps to its billable $ for this walk; total is the sum over unique dogs on the walk. */
+  perDogPrices?: Record<string, number>;
   actualDurationMinutes?: number;
   notes?: string;
   startedAt?: string;

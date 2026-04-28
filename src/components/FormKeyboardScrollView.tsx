@@ -1,5 +1,6 @@
 import React, { forwardRef, type ComponentProps } from 'react';
 import { Platform } from 'react-native';
+import { useFormLayoutAnimationKey } from '../hooks/useFormLayoutAnimation';
 import {
   KeyboardAwareScrollView,
   KeyboardAwareFlatList,
@@ -41,10 +42,17 @@ type FormScrollBase = ComponentProps<typeof KeyboardAwareScrollView> & {
    * Overridden by an explicit `keyboardDismissMode` if you pass it.
    */
   smoothKeyboardHide?: boolean;
+  /**
+   * When this string changes (e.g. serialized form layout state), the next layout update animates.
+   * Omit on static forms.
+   */
+  layoutAnimationKey?: string;
 };
 
 type FormFlatListBase = ComponentProps<typeof KeyboardAwareFlatList> & {
   smoothKeyboardHide?: boolean;
+  /** Same as `FormKeyboardScrollView` — animates when this string changes. */
+  layoutAnimationKey?: string;
 };
 
 function resolveKeyboardDismissMode(
@@ -82,6 +90,7 @@ export const FormKeyboardScrollView = forwardRef<
   {
     viewIsInsideTabBar,
     smoothKeyboardHide,
+    layoutAnimationKey,
     keyboardDismissMode: keyboardDismissModeProp,
     keyboardShouldPersistTaps: keyboardShouldPersistTapsProp,
     contentContainerStyle: contentContainerStyleProp,
@@ -89,6 +98,8 @@ export const FormKeyboardScrollView = forwardRef<
   },
   ref,
 ) {
+  useFormLayoutAnimationKey(layoutAnimationKey);
+
   const keyboardDismissMode = resolveKeyboardDismissMode(
     smoothKeyboardHide,
     keyboardDismissModeProp,
@@ -120,11 +131,14 @@ export const FormKeyboardScrollView = forwardRef<
 export function FormKeyboardFlatList({
   viewIsInsideTabBar,
   smoothKeyboardHide,
+  layoutAnimationKey,
   keyboardDismissMode: keyboardDismissModeProp,
   keyboardShouldPersistTaps: keyboardShouldPersistTapsProp,
   contentContainerStyle: contentContainerStyleProp,
   ...rest
 }: FormFlatListProps) {
+  useFormLayoutAnimationKey(layoutAnimationKey);
+
   const keyboardDismissMode = resolveKeyboardDismissMode(
     smoothKeyboardHide,
     keyboardDismissModeProp,

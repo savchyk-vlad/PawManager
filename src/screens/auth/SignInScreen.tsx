@@ -9,12 +9,12 @@ import { useAuthStore } from "../../store/authStore";
 import { AuthStackParamList } from "../../navigation/AuthNavigator";
 import {
   PrimaryButton,
-  BrandBlock,
   OrDivider,
   FormField,
   AuthInput,
   ErrorBox,
 } from "../../components/auth/AuthComponents";
+import { AuthBackLink } from "../../components/auth/AuthBackLink";
 import OAuthButtons from "../../components/OAuthButtons";
 
 type Nav = NativeStackNavigationProp<AuthStackParamList, "SignIn">;
@@ -45,16 +45,17 @@ export default function SignInScreen() {
   return (
     <SafeAreaView style={s.container}>
       <FormKeyboardScrollView
+        layoutAnimationKey={`${error ? "e" : ""}-${loading}`}
         style={{ flex: 1 }}
         contentContainerStyle={s.content}
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
       >
-          <TouchableOpacity
+          <AuthBackLink
+            onPress={() => navigation.goBack()}
             style={s.backBtn}
-            onPress={() => navigation.goBack()}>
-            <Text style={s.backText}>← Back</Text>
-          </TouchableOpacity>
+            textStyle={s.backText}
+          />
 
           <View style={s.headings}>
             <Text style={s.title}>Welcome back</Text>
@@ -115,7 +116,7 @@ export default function SignInScreen() {
 }
 
 const s = StyleSheet.create({
-  container: { flex: 1, backgroundColor: dc.surface.subtle },
+  container: { flex: 1, backgroundColor: dc.surface },
   content: {
     paddingHorizontal: 20,
     paddingTop: 24,
@@ -123,23 +124,23 @@ const s = StyleSheet.create({
     gap: 20,
   },
   backBtn: { marginBottom: 4 },
-  backText: { fontSize: 14, fontWeight: "500", color: dc.text.tertiary },
+  backText: { fontSize: 14, fontWeight: "500", color: dc.textMuted },
   headings: { gap: 4, marginBottom: 4 },
   title: {
     fontSize: 26,
     fontWeight: "700",
     letterSpacing: -0.5,
-    color: dc.text.primary,
+    color: dc.text,
   },
-  subtitle: { fontSize: 15, color: dc.text.secondary },
+  subtitle: { fontSize: 15, color: dc.textSecondary },
   form: { gap: 16 },
   forgotBtn: { alignSelf: "flex-end", marginTop: -8 },
-  forgotText: { fontSize: 13, fontWeight: "500", color: dc.brand.mid },
+  forgotText: { fontSize: 13, fontWeight: "500", color: dc.greenDefault },
   signUpLink: {
     textAlign: "center",
     fontSize: 12,
-    color: dc.text.tertiary,
+    color: dc.textMuted,
     lineHeight: 18,
   },
-  signUpLinkBold: { fontWeight: "600", color: dc.brand.mid },
+  signUpLinkBold: { fontWeight: "600", color: dc.greenDefault },
 });

@@ -1,5 +1,5 @@
 import { supabase } from './supabase';
-import { Client, Dog } from '../types';
+import { Client, Dog, DogTraitType } from '../types';
 
 // ─── Row shapes returned by Supabase ───────────────────────────────────────
 
@@ -25,16 +25,18 @@ interface DbDog {
   vet_phone: string;
   medical: string;
   key_location: string;
-  dog_traits: { label: string; type: 'positive' | 'warning' }[];
+  is_deleted: boolean;
+  dog_traits: { label: string; type: DogTraitType }[];
 }
 
 // ─── Mapping ────────────────────────────────────────────────────────────────
 
 function mapDog(row: DbDog): Dog {
+  const normalizedBreed = row.breed === 'Unknown' ? '' : row.breed;
   return {
     id: row.id,
     name: row.name,
-    breed: row.breed,
+    breed: normalizedBreed,
     age: row.age,
     weight: row.weight,
     emoji: row.emoji,
@@ -42,6 +44,7 @@ function mapDog(row: DbDog): Dog {
     vetPhone: row.vet_phone,
     medical: row.medical,
     keyLocation: row.key_location,
+    isDeleted: row.is_deleted ?? false,
     traits: row.dog_traits ?? [],
   };
 }
@@ -57,6 +60,28 @@ function mapClient(row: DbClient): Client {
   };
 }
 
+function isDogTraitTypeConstraintError(error: unknown): boolean {
+  const e = error as { code?: string; message?: string; details?: string } | null;
+  const blob = `${e?.message ?? ''} ${e?.details ?? ''}`.toLowerCase();
+  return e?.code === '23514' || blob.includes('dog_traits_type_check');
+}
+
+async function insertDogTraits(
+  dogId: string,
+  traits: { label: string; type: DogTraitType }[],
+): Promise<void> {
+  if (traits.length === 0) return;
+  const cleaned = traits.map((t) => ({ dog_id: dogId, label: t.label.trim(), type: t.type }));
+  const { error } = await supabase.from('dog_traits').insert(cleaned);
+  if (!error) return;
+  if (!isDogTraitTypeConstraintError(error)) {
+    throw new Error(error.message);
+  }
+  throw new Error(
+    'High risk traits require DB migration 005 (dog_traits red type). Please run the latest Supabase migrations and try again.'
+  );
+}
+
 // ─── API ────────────────────────────────────────────────────────────────────
 
 export async function fetchClients(userId: string): Promise<Client[]> {
@@ -65,7 +90,7 @@ export async function fetchClients(userId: string): Promise<Client[]> {
     .select(`
       id, user_id, name, address, phone, price_per_walk,
       dogs (
-        id, client_id, name, breed, age, weight, emoji,
+        id, client_id, name, breed, age, weight, emoji, is_deleted,
         vet, vet_phone, medical, key_location,
         dog_traits ( label, type )
       )
@@ -118,12 +143,7 @@ export async function createClient(
 
     if (dogErr) throw new Error(dogErr.message);
 
-    if (dog.traits.length > 0) {
-      const { error: traitErr } = await supabase.from('dog_traits').insert(
-        dog.traits.map((t) => ({ dog_id: dogRow.id, label: t.label, type: t.type }))
-      );
-      if (traitErr) throw new Error(traitErr.message);
-    }
+    await insertDogTraits(dogRow.id, dog.traits);
   }
 
   // 3. Re-fetch the full client to get generated IDs back
@@ -154,6 +174,63 @@ export async function updateClientFields(
   if (error) throw new Error(error.message);
 }
 
+/** Updates dog fields that can be changed from the client profile editor. */
+export async function updateDogFields(
+  dogId: string,
+  fields: { name: string; breed: string; emoji: string }
+): Promise<void> {
+  const { error } = await supabase
+    .from('dogs')
+    .update({
+      name: fields.name,
+      breed: fields.breed,
+      emoji: fields.emoji,
+    })
+    .eq('id', dogId);
+  if (error) throw new Error(error.message);
+}
+
+export type DogProfilePayload = {
+  name: string;
+  breed: string;
+  emoji: string;
+  age: number;
+  weight: number;
+  vet: string;
+  vetPhone: string;
+  medical: string;
+  keyLocation: string;
+};
+
+/** Full dog row update (wizard / dedicated dog editor). */
+export async function updateDogProfile(dogId: string, fields: DogProfilePayload): Promise<void> {
+  const { error } = await supabase
+    .from('dogs')
+    .update({
+      name: fields.name,
+      breed: fields.breed,
+      emoji: fields.emoji,
+      age: Math.max(0, Math.round(fields.age)),
+      weight: Number(fields.weight) >= 0 ? Number(fields.weight) : 0,
+      vet: fields.vet,
+      vet_phone: fields.vetPhone,
+      medical: fields.medical,
+      key_location: fields.keyLocation,
+    })
+    .eq('id', dogId);
+  if (error) throw new Error(error.message);
+}
+
+/** Replaces all traits for a dog (delete + insert). */
+export async function replaceDogTraits(
+  dogId: string,
+  traits: { label: string; type: DogTraitType }[],
+): Promise<void> {
+  const { error: delErr } = await supabase.from('dog_traits').delete().eq('dog_id', dogId);
+  if (delErr) throw new Error(delErr.message);
+  await insertDogTraits(dogId, traits);
+}
+
 export async function addDog(clientId: string, dog: Omit<Dog, 'id'>): Promise<Dog> {
   const { data: dogRow, error: dogErr } = await supabase
     .from('dogs')
@@ -173,16 +250,14 @@ export async function addDog(clientId: string, dog: Omit<Dog, 'id'>): Promise<Do
     .single();
   if (dogErr) throw new Error(dogErr.message);
 
-  if (dog.traits.length > 0) {
-    const { error: traitErr } = await supabase.from('dog_traits').insert(
-      dog.traits.map((t) => ({ dog_id: dogRow.id, label: t.label, type: t.type }))
-    );
-    if (traitErr) throw new Error(traitErr.message);
-  }
+  await insertDogTraits(dogRow.id, dog.traits);
   return { ...dog, id: dogRow.id };
 }
 
 export async function removeDog(dogId: string): Promise<void> {
-  const { error } = await supabase.from('dogs').delete().eq('id', dogId);
+  const { error } = await supabase
+    .from('dogs')
+    .update({ is_deleted: true, deleted_at: new Date().toISOString() })
+    .eq('id', dogId);
   if (error) throw new Error(error.message);
 }

@@ -15,6 +15,8 @@ import {
   ErrorBox,
 } from "../../components/auth/AuthComponents";
 import OAuthButtons from "../../components/OAuthButtons";
+import { AuthBackLink } from "../../components/auth/AuthBackLink";
+import { SignUpEmailConfirmation } from "./SignUpScreen/components/SignUpEmailConfirmation";
 
 type Nav = NativeStackNavigationProp<AuthStackParamList, "SignUp">;
 
@@ -77,16 +79,17 @@ export default function SignUpScreen() {
   return (
     <SafeAreaView style={s.container}>
       <FormKeyboardScrollView
+        layoutAnimationKey={`${error ? "e" : ""}-${loading}`}
         style={{ flex: 1 }}
         contentContainerStyle={s.content}
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
       >
-          <TouchableOpacity
+          <AuthBackLink
+            onPress={() => navigation.goBack()}
             style={s.backBtn}
-            onPress={() => navigation.goBack()}>
-            <Text style={s.backText}>← Back</Text>
-          </TouchableOpacity>
+            textStyle={s.backText}
+          />
 
           <View style={s.headings}>
             <Text style={s.title}>Create account</Text>
@@ -158,7 +161,7 @@ export default function SignUpScreen() {
 }
 
 const s = StyleSheet.create({
-  container: { flex: 1, backgroundColor: dc.surface.subtle },
+  container: { flex: 1, backgroundColor: dc.surface },
   content: {
     paddingHorizontal: 20,
     paddingTop: 24,
@@ -166,25 +169,25 @@ const s = StyleSheet.create({
     gap: 20,
   },
   backBtn: { marginBottom: 4 },
-  backText: { fontSize: 14, fontWeight: "500", color: dc.text.tertiary },
+  backText: { fontSize: 14, fontWeight: "500", color: dc.textMuted },
   headings: { gap: 4 },
   title: {
     fontSize: 26,
     fontWeight: "700",
     letterSpacing: -0.5,
-    color: dc.text.primary,
+    color: dc.text,
   },
-  subtitle: { fontSize: 15, color: dc.text.secondary },
+  subtitle: { fontSize: 15, color: dc.textSecondary },
   form: { gap: 18 },
   terms: {
     textAlign: "center",
     fontSize: 12,
-    color: dc.text.tertiary,
+    color: dc.textMuted,
     lineHeight: 18,
   },
-  termsLink: { color: dc.brand.mid },
-  signInLink: { textAlign: "center", fontSize: 13, color: dc.text.tertiary },
-  signInLinkBold: { fontWeight: "600", color: dc.brand.mid },
+  termsLink: { color: dc.greenDefault },
+  signInLink: { textAlign: "center", fontSize: 13, color: dc.textMuted },
+  signInLinkBold: { fontWeight: "600", color: dc.greenDefault },
   successBox: {
     flex: 1,
     paddingHorizontal: 20,
@@ -192,20 +195,20 @@ const s = StyleSheet.create({
     gap: 20,
   },
   successCard: {
-    backgroundColor: dc.brand.light,
+    backgroundColor: dc.greenSubtle,
     borderLeftWidth: 3,
-    borderLeftColor: dc.brand.dark,
+    borderLeftColor: dc.greenDeep,
     borderRadius: design.radius.sm,
     padding: 16,
     flexDirection: "row",
     gap: 12,
   },
-  successIcon: { fontSize: 20, color: dc.brand.dark, fontWeight: "700" },
+  successIcon: { fontSize: 20, color: dc.greenDeep, fontWeight: "700" },
   successTitle: {
     fontSize: 14,
     fontWeight: "600",
-    color: dc.brand.dark,
+    color: dc.greenDeep,
     marginBottom: 4,
   },
-  successBody: { fontSize: 12, color: dc.brand.mid, lineHeight: 18 },
+  successBody: { fontSize: 12, color: dc.greenDefault, lineHeight: 18 },
 });

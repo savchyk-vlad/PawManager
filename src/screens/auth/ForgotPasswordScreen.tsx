@@ -8,6 +8,8 @@ import { design } from '../../theme';
 import { useAuthStore } from '../../store/authStore';
 import { AuthStackParamList } from '../../navigation/AuthNavigator';
 import { PrimaryButton, FormField, AuthInput, ErrorBox } from '../../components/auth/AuthComponents';
+import { AuthBackLink } from '../../components/auth/AuthBackLink';
+import { AuthNoticeCard } from '../../components/auth/AuthNoticeCard';
 
 type Nav = NativeStackNavigationProp<AuthStackParamList, 'ForgotPassword'>;
 
@@ -36,14 +38,17 @@ export default function ForgotPasswordScreen() {
   return (
     <SafeAreaView style={s.container}>
       <FormKeyboardScrollView
+        layoutAnimationKey={`${sent ? "sent" : "form"}-${error ? "e" : ""}`}
         style={{ flex: 1 }}
         contentContainerStyle={s.content}
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
       >
-          <TouchableOpacity style={s.backBtn} onPress={() => navigation.goBack()}>
-            <Text style={s.backText}>← Back</Text>
-          </TouchableOpacity>
+          <AuthBackLink
+            onPress={() => navigation.goBack()}
+            style={s.backBtn}
+            textStyle={s.backText}
+          />
 
           <View style={s.hero}>
             <Text style={s.heroIcon}>🔑</Text>
@@ -68,15 +73,11 @@ export default function ForgotPasswordScreen() {
           </FormField>
 
           {sent ? (
-            <View style={s.successCard}>
-              <Text style={s.successIcon}>✓</Text>
-              <View style={{ flex: 1 }}>
-                <Text style={s.successTitle}>Check your inbox</Text>
-                <Text style={s.successBody}>
-                  We sent a reset link to {email}. It expires in 15 minutes.
-                </Text>
-              </View>
-            </View>
+            <AuthNoticeCard
+              title="Check your inbox"
+              body={`We sent a reset link to ${email}. It expires in 15 minutes.`}
+              styles={s}
+            />
           ) : (
             <PrimaryButton label="Send Reset Link" onPress={handleReset} loading={loading} />
           )}
@@ -93,26 +94,26 @@ export default function ForgotPasswordScreen() {
 }
 
 const s = StyleSheet.create({
-  container: { flex: 1, backgroundColor: dc.surface.subtle },
+  container: { flex: 1, backgroundColor: dc.surface },
   content: {
     paddingHorizontal: 20, paddingTop: 24, paddingBottom: 40, gap: 20,
   },
   backBtn: { marginBottom: 8 },
-  backText: { fontSize: 14, fontWeight: '500', color: dc.text.tertiary },
+  backText: { fontSize: 14, fontWeight: '500', color: dc.textMuted },
   hero: { gap: 8, marginBottom: 4 },
   heroIcon: { fontSize: 40, marginBottom: 6 },
-  title: { fontSize: 26, fontWeight: '700', letterSpacing: -0.5, color: dc.text.primary },
-  body: { fontSize: 15, color: dc.text.secondary, lineHeight: 22 },
+  title: { fontSize: 26, fontWeight: '700', letterSpacing: -0.5, color: dc.text },
+  body: { fontSize: 15, color: dc.textSecondary, lineHeight: 22 },
   successCard: {
-    backgroundColor: dc.brand.light,
-    borderLeftWidth: 3, borderLeftColor: dc.brand.dark,
+    backgroundColor: dc.greenSubtle,
+    borderLeftWidth: 3, borderLeftColor: dc.greenDeep,
     borderRadius: dr.sm,
     padding: 16,
     flexDirection: 'row', gap: 12,
   },
-  successIcon: { fontSize: 20, color: dc.brand.dark, fontWeight: '700' },
-  successTitle: { fontSize: 14, fontWeight: '600', color: dc.brand.dark, marginBottom: 4 },
-  successBody: { fontSize: 12, color: dc.brand.mid, lineHeight: 18 },
-  signInLink: { textAlign: 'center', fontSize: 13, color: dc.text.tertiary },
-  signInLinkBold: { fontWeight: '600', color: dc.brand.mid },
+  successIcon: { fontSize: 20, color: dc.greenDeep, fontWeight: '700' },
+  successTitle: { fontSize: 14, fontWeight: '600', color: dc.greenDeep, marginBottom: 4 },
+  successBody: { fontSize: 12, color: dc.greenDefault, lineHeight: 18 },
+  signInLink: { textAlign: 'center', fontSize: 13, color: dc.textMuted },
+  signInLinkBold: { fontWeight: '600', color: dc.greenDefault },
 });
