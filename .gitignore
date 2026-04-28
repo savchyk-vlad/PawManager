@@ -47,17 +47,6 @@ credentials.json
 # Vercel (if used for web)
 .vercel
 
-# Local tool settings (do not commit machine-specific)
-.claude/settings.local.json
-
-# Android (when present — e.g. after prebuild)
-android/app/build/
-android/build/
-android/.gradle/
-android/local.properties
-*.apk
-*.aab
-
-# Ruby (CocoaPods / Fastlane) — project-level
-vendor/bundle/
-.bundle/
+# typescript
+*.tsbuildinfo
+next-env.d.ts
