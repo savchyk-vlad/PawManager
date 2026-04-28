@@ -129,10 +129,10 @@ export default function EditWalkScreen() {
   );
 
   const confirmCancelWalk = async () => {
+    const cancellingWalkId = walkId;
     leavingAfterCancelRef.current = true;
     setCancelling(true);
     try {
-      await cancelWalk(walkId);
       setShowCancelWalkSheet(false);
       if (typeof navigation.pop === "function") {
         navigation.pop(2);
@@ -146,6 +146,7 @@ export default function EditWalkScreen() {
           }
         });
       }
+      await cancelWalk(cancellingWalkId);
     } catch (e: unknown) {
       leavingAfterCancelRef.current = false;
       const msg = e && typeof e === "object" && "message" in e ? String((e as { message?: string }).message) : "";

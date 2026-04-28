@@ -35,7 +35,6 @@ import { useSettingsStore } from "../../store/settingsStore";
 import { useAuthStore } from "../../store/authStore";
 import { colors } from "../../theme";
 import { SettingsProfileHero } from "./components/SettingsProfileHero";
-import { SettingsSubscriptionCard } from "./components/SettingsSubscriptionCard";
 import { SettingsBusinessSection } from "./components/SettingsBusinessSection";
 import { SettingsNotificationsSection } from "./components/SettingsNotificationsSection";
 import { SettingsSupportSection } from "./components/SettingsSupportSection";
@@ -157,7 +156,6 @@ type Nav = NativeStackNavigationProp<RootStackParamList>;
 export default function SettingsScreen() {
   const navigation = useNavigation<Nav>();
   const insets = useSafeAreaInsets();
-  const nameInputRef = useRef<TextInput>(null);
 
   const [fontsLoaded] = useFonts({
     DMSans_400Regular,
@@ -167,6 +165,7 @@ export default function SettingsScreen() {
   });
 
   const clients = useAppStore((st) => st.clients);
+  const walks = useAppStore((st) => st.walks);
   const FREE_LIMIT = 5;
 
   const {
@@ -199,6 +198,7 @@ export default function SettingsScreen() {
 
   const [bizInput, setBizInput] = useState(businessName);
   const [fullNameInput, setFullNameInput] = useState("");
+  const [nameModalOpen, setNameModalOpen] = useState(false);
   const [savingFullName, setSavingFullName] = useState(false);
   const [showDeleteSheet, setShowDeleteSheet] = useState(false);
   const [deleteAccountLoading, setDeleteAccountLoading] = useState(false);
@@ -306,20 +306,37 @@ export default function SettingsScreen() {
     if (err) Alert.alert("Couldn't save settings", err);
   }
 
-  function handleNameBlur() {
+  function openNameModal() {
+    setFullNameInput(fullName === "Your name" ? "" : fullName);
+    setNameModalOpen(true);
+  }
+
+  async function saveNameModal() {
     const next = fullNameInput.trim();
-    if (!next || next === fullName || savingFullName) {
-      setFullNameInput(fullName);
+    if (!next) {
+      Alert.alert("Name", "Please enter your name.");
+      return;
+    }
+    if (next === fullName || savingFullName) {
+      Keyboard.dismiss();
+      setNameModalOpen(false);
       return;
     }
     setSavingFullName(true);
-    updateFullName(next).then((err) => {
-      setSavingFullName(false);
-      if (err) {
-        Alert.alert("Error", err);
-        setFullNameInput(fullName);
-      }
-    });
+    const err = await updateFullName(next);
+    setSavingFullName(false);
+    if (err) {
+      Alert.alert("Error", err);
+      return;
+    }
+    Keyboard.dismiss();
+    setNameModalOpen(false);
+  }
+
+  function cancelNameModal() {
+    Keyboard.dismiss();
+    setNameModalOpen(false);
+    setFullNameInput(fullName);
   }
 
   function openBusinessNameModal() {
@@ -469,6 +486,10 @@ export default function SettingsScreen() {
   );
 
   const f = fontsLoaded;
+  const walksCount = useMemo(
+    () => walks.filter((w) => w.status !== "cancelled").length,
+    [walks],
+  );
 
   if (!fontsLoaded) {
     return (
@@ -495,21 +516,15 @@ export default function SettingsScreen() {
         viewIsInsideTabBar>
         <SettingsProfileHero
           styles={st}
-          nameInputRef={nameInputRef}
           initials={initials}
-          fullNameInput={fullNameInput}
-          onChangeFullName={setFullNameInput}
-          onNameBlur={handleNameBlur}
+          fullName={fullName}
+          onOpenNameModal={openNameModal}
           savingFullName={savingFullName}
           email={email}
-        />
-
-        <SettingsSubscriptionCard
-          styles={st}
-          mono={mono}
-          clientCount={clients.length}
-          freeLimit={FREE_LIMIT}
-          onPress={() => navigation.navigate("Subscriptions")}
+          defaultRate={defaultRate}
+          walksCount={walksCount}
+          clientsCount={clients.length}
+          defaultWalkDuration={defaultWalkDuration}
         />
 
         <SettingsBusinessSection
@@ -563,6 +578,25 @@ export default function SettingsScreen() {
           onDelete={() => setShowDeleteSheet(true)}
         />
       </FormKeyboardScrollView>
+
+      <TextFieldModal
+        visible={nameModalOpen}
+        title="Edit profile"
+        hint="Update the name shown in your profile."
+        value={fullNameInput}
+        onChangeText={setFullNameInput}
+        placeholder="Your name"
+        onSave={saveNameModal}
+        onCancel={cancelNameModal}
+        saveLabel="Save"
+        useDmSans={f}
+        textInputProps={{
+          autoCapitalize: "words",
+          autoCorrect: true,
+          returnKeyType: "done",
+          editable: !savingFullName,
+        }}
+      />
 
       <TextFieldModal
         visible={bizModalOpen}
@@ -843,50 +877,116 @@ const st = StyleSheet.create({
     paddingTop: 0,
   },
   profileHero: {
-    alignItems: "center",
-    paddingTop: 10,
-    paddingBottom: 20,
+    marginTop: 4,
+    marginBottom: 14,
   },
-  avatarWrap: { position: "relative", marginBottom: 12 },
+  profileBanner: {
+    height: 102,
+    borderRadius: 20,
+    backgroundColor: colors.greenDeep,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: colors.border,
+    overflow: "visible",
+  },
+  profileBannerPattern: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: "rgba(255,255,255,0.03)",
+  },
+  profileBannerInner: {
+    flex: 1,
+    paddingHorizontal: 16,
+    paddingBottom: 12,
+    flexDirection: "row",
+    alignItems: "flex-end",
+    justifyContent: "flex-start",
+  },
+  profileHeroBody: {
+    marginTop: 26,
+    paddingHorizontal: 8,
+    alignItems: "flex-start",
+    width: "100%",
+  },
+  avatarWrap: { position: "relative", overflow: "visible" },
   avatarCircle: {
-    width: 76,
-    height: 76,
-    borderRadius: 38,
+    width: 68,
+    height: 68,
+    borderRadius: 34,
     backgroundColor: colors.greenDeep,
-    borderWidth: 2,
-    borderColor: colors.greenDeep,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  avatarLetter: { fontSize: 28, fontWeight: "700", color: colors.greenDefault },
-  avatarEdit: {
-    position: "absolute",
-    bottom: 0,
-    right: 0,
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-    backgroundColor: colors.greenDeep,
-    alignItems: "center",
-    justifyContent: "center",
-    borderWidth: 2,
+    borderWidth: 3,
     borderColor: colors.bg,
+    alignItems: "center",
+    justifyContent: "center",
+    zIndex: 2,
+  },
+  avatarLetter: { fontSize: 24, fontWeight: "700", color: colors.greenText },
+
+  editProfileBtn: {
+    position: "absolute",
+    top: 12,
+    right: 16,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 5,
+    paddingVertical: 7,
+    paddingHorizontal: 12,
+    borderRadius: 10,
+    backgroundColor: "rgba(0,0,0,0.28)",
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: colors.textSecondary,
+  },
+  editProfileBtnText: {
+    fontSize: 12,
+    color: colors.textSecondary,
   },
   profileName: {
-    fontSize: 20,
-    fontWeight: "700",
+    fontSize: 18,
+    fontWeight: "600",
     color: colors.text,
     letterSpacing: -0.5,
-    textAlign: "center",
-    paddingVertical: 4,
-    minWidth: 200,
+    textAlign: "left",
+    paddingVertical: 2,
+    minWidth: 180,
   },
   profileEmail: {
     fontSize: 12,
     color: colors.textMuted,
-    marginTop: 3,
+    marginTop: 2,
   },
-  heroSaving: { fontSize: 11, color: colors.greenDefault, marginTop: 6 },
+  heroSaving: { fontSize: 11, color: colors.greenDefault, marginTop: 5 },
+  profileStatsRow: {
+    width: "100%",
+    marginTop: 18,
+    flexDirection: "row",
+    alignItems: "stretch",
+  },
+  profileStatItem: {
+    flex: 1,
+    alignItems: "flex-start",
+    justifyContent: "center",
+    minHeight: 56,
+    paddingRight: 10,
+  },
+  profileStatDivider: {
+    width: StyleSheet.hairlineWidth,
+    backgroundColor: colors.border,
+    marginRight: 12,
+    marginLeft: 2,
+  },
+  profileStatValue: {
+    fontSize: 16,
+    lineHeight: 20,
+    color: colors.text,
+    letterSpacing: -0.3,
+  },
+  profileStatValueAccent: {
+    color: colors.greenText,
+  },
+  profileStatLabel: {
+    marginTop: 2,
+    fontSize: 10,
+    color: colors.textMuted,
+    letterSpacing: 0.4,
+  },
   sectionLabel: {
     fontSize: 10,
     fontWeight: "600",
@@ -896,6 +996,13 @@ const st = StyleSheet.create({
     paddingHorizontal: 4,
     marginTop: 16,
     marginBottom: 8,
+  },
+  sectionLabelRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: 8,
+    paddingRight: 2,
   },
   card: {
     backgroundColor: colors.surface,
@@ -952,14 +1059,14 @@ const st = StyleSheet.create({
     paddingHorizontal: 10,
     paddingVertical: 5,
     borderRadius: 8,
-    backgroundColor: "#222",
+    backgroundColor: "rgba(139,168,144,0.16)",
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: "rgba(255,255,255,0.08)",
+    borderColor: "rgba(139,168,144,0.45)",
   },
   comingSoonBadgeText: {
     fontSize: 10,
     fontWeight: "700",
-    color: colors.textMuted,
+    color: colors.textSecondary,
     letterSpacing: 0.35,
     textTransform: "uppercase",
   },

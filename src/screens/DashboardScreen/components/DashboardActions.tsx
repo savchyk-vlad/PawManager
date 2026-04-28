@@ -20,7 +20,7 @@ export function DashboardActions({
     <View style={styles.tabsWrap}>
       <TouchableOpacity style={styles.tab} onPress={() => onSwitchTab("schedule")}>
         <Text style={[styles.tabText, activeTab === "schedule" && styles.tabTextActive]}>
-          Today
+          Scheduled
         </Text>
         {activeTab === "schedule" && <View style={styles.tabLine} />}
       </TouchableOpacity>

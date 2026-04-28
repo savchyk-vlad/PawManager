@@ -38,7 +38,7 @@ export function AddWalkClientSection({
 }) {
   return (
     <>
-      <Text style={styles.sectionLabel}>CLIENT</Text>
+      <Text style={styles.sectionLabel}>CLIENTS</Text>
       {clientMatch && selectedClientId && String(selectedClientId).startsWith("temp-") && (
         <Text style={styles.clientPending}>Saving new client to server…</Text>
       )}

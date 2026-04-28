@@ -45,6 +45,9 @@ const config = {
     '@react-native-community/datetimepicker',
   ],
   extra: {
+    eas: {
+      projectId: '667e0cb7-eaef-4329-b11f-3fd4754758ab',
+    },
     supabaseUrl:
       e.SUPABASE_URL ||
       e.EXPO_PUBLIC_SUPABASE_URL ||

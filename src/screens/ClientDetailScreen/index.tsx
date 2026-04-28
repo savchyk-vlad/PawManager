@@ -90,11 +90,12 @@ export default function ClientDetailScreen() {
   };
 
   const confirmDeleteClient = async () => {
+    const deletingClientId = client.id;
     try {
       setRemovingClient(true);
-      await removeClient(client.id);
       setShowDeleteSheet(false);
       navigation.goBack();
+      await removeClient(deletingClientId);
     } catch (e) {
       Alert.alert(
         "Error",

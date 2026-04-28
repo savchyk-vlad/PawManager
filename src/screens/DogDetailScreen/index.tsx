@@ -143,10 +143,12 @@ export default function DogDetailScreen() {
         text: "Delete",
         style: "destructive",
         onPress: async () => {
+          const deletingClientId = client.id;
+          const deletingDogId = dog.id;
           try {
             setRemoving(true);
-            await removeDogFromClient(client.id, dog.id);
             navigation.goBack();
+            await removeDogFromClient(deletingClientId, deletingDogId);
           } catch (e) {
             Alert.alert(
               "Error",

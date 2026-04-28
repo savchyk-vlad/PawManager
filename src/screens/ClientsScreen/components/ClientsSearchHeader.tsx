@@ -29,19 +29,21 @@ export function ClientsSearchHeader({
   onChangeQuery,
   filter,
   onSelectFilter,
-  showTabs,
 }: {
   styles: Styles;
   query: string;
   onChangeQuery: (q: string) => void;
   filter: ClientsFilterMode;
   onSelectFilter: (key: ClientsFilterMode) => void;
-  showTabs: boolean;
 }) {
   return (
     <View style={styles.searchWrap}>
       <View style={styles.searchBar}>
-        <Ionicons name="search-outline" size={15} color={"rgba(255,255,255,0.4)"} />
+        <Ionicons
+          name="search-outline"
+          size={15}
+          color={"rgba(255,255,255,0.4)"}
+        />
         <FormField
           label=""
           value={query}
@@ -60,16 +62,23 @@ export function ClientsSearchHeader({
         )}
       </View>
 
-      {showTabs && (
-        <View style={styles.tabs}>
-          {CLIENT_FILTER_TABS.map((tab) => (
-            <TouchableOpacity key={tab.key} style={styles.tab} onPress={() => onSelectFilter(tab.key)}>
-              <Text style={[styles.tabText, filter === tab.key && styles.tabTextActive]}>{tab.label}</Text>
-              {filter === tab.key && <View style={styles.tabLine} />}
-            </TouchableOpacity>
-          ))}
-        </View>
-      )}
+      <View style={styles.tabs}>
+        {CLIENT_FILTER_TABS.map((tab) => (
+          <TouchableOpacity
+            key={tab.key}
+            style={styles.tab}
+            onPress={() => onSelectFilter(tab.key)}>
+            <Text
+              style={[
+                styles.tabText,
+                filter === tab.key && styles.tabTextActive,
+              ]}>
+              {tab.label}
+            </Text>
+            {filter === tab.key && <View style={styles.tabLine} />}
+          </TouchableOpacity>
+        ))}
+      </View>
     </View>
   );
 }

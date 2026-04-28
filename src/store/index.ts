@@ -294,16 +294,20 @@ export const useAppStore = create<AppState>((set, get) => ({
   },
 
   removeClient: async (clientId) => {
-    const prevClients = get().clients;
-    const prevWalks = get().walks;
-    set((s) => ({
-      clients: s.clients.filter((c) => c.id !== clientId),
-      walks: s.walks.filter((w) => w.clientId !== clientId),
-    }));
     try {
       await deleteClient(clientId);
+      set((s) => {
+        const nextClients = s.clients.filter((c) => c.id !== clientId);
+        const nextWalks = s.walks.filter((w) => w.clientId !== clientId);
+        return {
+          clients: nextClients,
+          walks: nextWalks,
+          activeWalkId: getPrimaryActiveWalkId(nextWalks),
+          activeWalkStartedAt: getActiveWalkStartedAt(nextWalks),
+        };
+      });
     } catch (e: any) {
-      set({ clients: prevClients, walks: prevWalks, clientsError: e.message });
+      set({ clientsError: e.message });
       throw e;
     }
   },

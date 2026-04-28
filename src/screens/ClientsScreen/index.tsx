@@ -5,7 +5,12 @@ import React, {
   useCallback,
   useEffect,
 } from "react";
-import { View, ScrollView, StyleSheet, useWindowDimensions } from "react-native";
+import {
+  View,
+  ScrollView,
+  StyleSheet,
+  useWindowDimensions,
+} from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
@@ -113,7 +118,6 @@ export default function ClientsScreen() {
         onChangeQuery={setQuery}
         filter={filter}
         onSelectFilter={selectFilter}
-        showTabs={clients.length > 0}
       />
 
       <ClientsPagedLists

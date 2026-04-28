@@ -29,11 +29,16 @@ export function ClientDetailDogsTab({
       contentContainerStyle={styles.content}
       showsVerticalScrollIndicator={false}>
       {activeDogs.length === 0 ? (
-        <EmptyPlaceholder
-          text="No dogs added yet"
-          ctaLabel="Add dog"
-          onCta={() => navigation.navigate("EditDog", { clientId })}
-        />
+        <>
+          <EmptyPlaceholder text="No dogs added yet" />
+          <TouchableOpacity
+            style={[styles.addDogFooter, { marginTop: 14 }]}
+            activeOpacity={0.85}
+            onPress={() => navigation.navigate("EditDog", { clientId })}>
+            <Ionicons name="add-outline" size={20} color={colors.greenDefault} />
+            <Text style={styles.addDogFooterText}>Add first dog</Text>
+          </TouchableOpacity>
+        </>
       ) : (
         <>
           <View style={styles.card}>
