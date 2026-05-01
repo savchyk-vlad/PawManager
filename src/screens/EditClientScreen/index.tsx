@@ -27,6 +27,7 @@ export default function EditClientScreen() {
   const [name, setName] = useState(client.name);
   const [phone, setPhone] = useState(client.phone);
   const [address, setAddress] = useState(client.address);
+  const [keyLocation, setKeyLocation] = useState(client.keyLocation ?? "");
   const [price, setPrice] = useState(String(client.pricePerWalk));
   const [saving, setSaving] = useState(false);
 
@@ -40,6 +41,7 @@ export default function EditClientScreen() {
         name: name.trim(),
         phone: phone.trim(),
         address: address.trim(),
+        keyLocation: keyLocation.trim(),
         pricePerWalk: parseFloat(price) || 0,
       });
 
@@ -58,14 +60,15 @@ export default function EditClientScreen() {
   };
 
   return (
-    <View style={[s.safe, { paddingTop: insets.top }]}>
+    <View style={s.safe}>
+      <View style={{ height: insets.top, backgroundColor: colors.greenDeep }} />
       <ClientFormScreenHeader
         title="Edit Client"
         onClose={() => navigation.goBack()}
-        onSave={handleSave}
-        canSave={canSave}
-        saving={saving}
-        styles={s}
+        onSave={() => {}}
+        canSave={false}
+        saving={false}
+        styles={{ ...s, saveBtn: { display: "none" }, saveBtnText: { display: "none" } }}
       />
 
       <FormKeyboardScrollView
@@ -79,10 +82,12 @@ export default function EditClientScreen() {
           name={name}
           phone={phone}
           address={address}
+          keyLocation={keyLocation}
           price={price}
           onChangeName={setName}
           onChangePhone={setPhone}
           onChangeAddress={setAddress}
+          onChangeKeyLocation={setKeyLocation}
           onChangePrice={setPrice}
         />
 
@@ -108,16 +113,15 @@ const s = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
+    backgroundColor: colors.greenDeep,
     paddingHorizontal: 16,
     paddingVertical: 14,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: colors.border,
   },
   closeBtn: {
     width: 36,
     height: 36,
     borderRadius: 18,
-    backgroundColor: colors.surface,
+    backgroundColor: "rgba(255,255,255,0.16)",
     alignItems: "center",
     justifyContent: "center",
   },

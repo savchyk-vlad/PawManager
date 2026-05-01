@@ -4,7 +4,7 @@ import { FormKeyboardScrollView } from '../../components/FormKeyboardScrollView'
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { design } from '../../theme';
+import { auth } from './authTheme';
 import { useAuthStore } from '../../store/authStore';
 import { AuthStackParamList } from '../../navigation/AuthNavigator';
 import { PrimaryButton, FormField, AuthInput, ErrorBox } from '../../components/auth/AuthComponents';
@@ -13,8 +13,8 @@ import { AuthNoticeCard } from '../../components/auth/AuthNoticeCard';
 
 type Nav = NativeStackNavigationProp<AuthStackParamList, 'ForgotPassword'>;
 
-const dc = design.colors;
-const dr = design.radius;
+const dc = auth.colors;
+const dr = auth.radius;
 
 export default function ForgotPasswordScreen() {
   const navigation = useNavigation<Nav>();
@@ -82,7 +82,11 @@ export default function ForgotPasswordScreen() {
             <PrimaryButton label="Send Reset Link" onPress={handleReset} loading={loading} />
           )}
 
-          <TouchableOpacity onPress={() => navigation.navigate('SignIn')}>
+          <TouchableOpacity
+            onPress={() => navigation.navigate('SignIn')}
+            style={s.linkBtn}
+            activeOpacity={0.85}
+            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
             <Text style={s.signInLink}>
               Remembered it?{' '}
               <Text style={s.signInLinkBold}>Sign in</Text>
@@ -94,26 +98,32 @@ export default function ForgotPasswordScreen() {
 }
 
 const s = StyleSheet.create({
-  container: { flex: 1, backgroundColor: dc.surface },
+  container: { flex: 1, backgroundColor: dc.bg },
   content: {
     paddingHorizontal: 20, paddingTop: 24, paddingBottom: 40, gap: 20,
   },
   backBtn: { marginBottom: 8 },
-  backText: { fontSize: 14, fontWeight: '500', color: dc.textMuted },
+  backText: { fontSize: 14, fontWeight: '500', color: dc.text3 },
   hero: { gap: 8, marginBottom: 4 },
   heroIcon: { fontSize: 40, marginBottom: 6 },
   title: { fontSize: 26, fontWeight: '700', letterSpacing: -0.5, color: dc.text },
-  body: { fontSize: 15, color: dc.textSecondary, lineHeight: 22 },
+  body: { fontSize: 15, color: dc.text2, lineHeight: 22 },
   successCard: {
-    backgroundColor: dc.greenSubtle,
-    borderLeftWidth: 3, borderLeftColor: dc.greenDeep,
-    borderRadius: dr.sm,
+    backgroundColor: dc.accentDim,
+    borderWidth: 1,
+    borderColor: 'rgba(74,224,112,0.25)',
+    borderRadius: dr.rSm,
     padding: 16,
     flexDirection: 'row', gap: 12,
   },
-  successIcon: { fontSize: 20, color: dc.greenDeep, fontWeight: '700' },
-  successTitle: { fontSize: 14, fontWeight: '600', color: dc.greenDeep, marginBottom: 4 },
-  successBody: { fontSize: 12, color: dc.greenDefault, lineHeight: 18 },
-  signInLink: { textAlign: 'center', fontSize: 13, color: dc.textMuted },
-  signInLinkBold: { fontWeight: '600', color: dc.greenDefault },
+  successIcon: { fontSize: 20, color: dc.accent, fontWeight: '800' },
+  successTitle: { fontSize: 14, fontWeight: '600', color: dc.text, marginBottom: 4 },
+  successBody: { fontSize: 12, color: dc.text2, lineHeight: 18 },
+  signInLink: { textAlign: 'center', fontSize: 13, color: dc.text3 },
+  signInLinkBold: { fontWeight: '600', color: dc.accent },
+  linkBtn: {
+    paddingVertical: 10,
+    paddingHorizontal: 8,
+    alignSelf: 'center',
+  },
 });

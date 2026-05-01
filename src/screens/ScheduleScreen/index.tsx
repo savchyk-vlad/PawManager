@@ -1,11 +1,18 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useMemo, useRef, useState } from 'react';
 import {
   View, Text, ScrollView, StyleSheet, TouchableOpacity, useWindowDimensions,
   LayoutAnimation, Platform, UIManager, Alert,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import {
-  format, isToday, isSameDay, parseISO, startOfMonth, endOfMonth, addMonths, subMonths,
+  format,
+  isSameDay,
+  parseISO,
+  startOfMonth,
+  endOfMonth,
+  addMonths,
+  subMonths,
+  addDays,
 } from 'date-fns';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
@@ -15,12 +22,6 @@ import { useAppStore } from '../../store';
 import { Walk } from '../../types';
 import { RootStackParamList } from '../../navigation';
 import { WalkListCard } from '../../components/WalkListCard';
-import {
-  isUserWorkingDay,
-  nearestWorkingDay,
-  snapToNearestWorkingDay,
-} from '../../lib/workingDays';
-import { useSettingsStore } from '../../store/settingsStore';
 import { chunkIntoRows, padCalendarToFullWeeks } from '../../lib/calendarWeekRows';
 import { colors } from '../../theme';
 import { ScheduleHeader } from './components/ScheduleHeader';
@@ -33,7 +34,6 @@ export default function ScheduleScreen() {
   const navigation = useNavigation<Nav>();
   const insets = useSafeAreaInsets();
   const { walks, clients } = useAppStore();
-  const workingDays = useSettingsStore((s) => s.workingDays);
   const [monthDate, setMonthDate] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState<Date | null>(new Date());
   const [openHours, setOpenHours] = useState<Record<string, boolean>>({});
@@ -86,20 +86,16 @@ export default function ScheduleScreen() {
   const walkCountForDate = (date: Date) =>
     walks.filter((w) => isSameDay(parseISO(w.scheduledAt), date)).length;
 
-  useEffect(() => {
-    setSelectedDate((prev) => {
-      if (prev == null) return prev;
-      if (!isUserWorkingDay(prev, workingDays)) return snapToNearestWorkingDay(prev, workingDays);
-      return prev;
-    });
-  }, [workingDays]);
-
   const toggleHour = (hourLabel: string) => {
     if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
       UIManager.setLayoutAnimationEnabledExperimental(true);
     }
     LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
-    setOpenHours((prev) => ({ ...prev, [hourLabel]: !prev[hourLabel] }));
+    setOpenHours((prev) => {
+      const nextOpen = !prev[hourLabel];
+      // Accordion behavior: only one section open at a time.
+      return nextOpen ? { [hourLabel]: true } : {};
+    });
   };
 
   const changeMonth = (delta: -1 | 1) => {
@@ -109,9 +105,7 @@ export default function ScheduleScreen() {
       next.getFullYear() === now.getFullYear() && next.getMonth() === now.getMonth();
     setMonthDate(next);
     if (isCurrentMonth) {
-      setSelectedDate(
-        isUserWorkingDay(now, workingDays) ? now : snapToNearestWorkingDay(now, workingDays),
-      );
+      setSelectedDate(now);
     } else {
       setSelectedDate(null);
     }
@@ -120,7 +114,7 @@ export default function ScheduleScreen() {
 
   const moveSelectedDay = (delta: -1 | 1) => {
     const base = selectedDate ?? new Date(monthDate.getFullYear(), monthDate.getMonth(), 1);
-    const next = nearestWorkingDay(base, delta, workingDays);
+    const next = addDays(base, delta);
     setSelectedDate(next);
     setMonthDate(new Date(next.getFullYear(), next.getMonth(), 1));
     setOpenHours({});
@@ -129,15 +123,11 @@ export default function ScheduleScreen() {
   const carouselBaseDay = selectedDate ?? new Date(monthDate.getFullYear(), monthDate.getMonth(), 1);
   const carouselDays =
     selectedDate != null
-      ? [
-          nearestWorkingDay(selectedDate, -1, workingDays),
-          selectedDate,
-          nearestWorkingDay(selectedDate, 1, workingDays),
-        ]
+      ? [addDays(selectedDate, -1), selectedDate, addDays(selectedDate, 1)]
       : [
-          nearestWorkingDay(carouselBaseDay, -1, workingDays),
+          addDays(carouselBaseDay, -1),
           carouselBaseDay,
-          nearestWorkingDay(carouselBaseDay, 1, workingDays),
+          addDays(carouselBaseDay, 1),
         ];
 
   return (
@@ -155,7 +145,6 @@ export default function ScheduleScreen() {
         monthDate={monthDate}
         weekRows={scheduleWeekRows}
         selectedDate={selectedDate}
-        workingDays={workingDays}
         walkCountForDate={walkCountForDate}
         onChangeMonth={changeMonth}
         onSelectDate={(date) => {

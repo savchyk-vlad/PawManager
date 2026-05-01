@@ -1,10 +1,11 @@
 import React, { useEffect } from 'react';
-import { View, ActivityIndicator, StyleSheet } from 'react-native';
+import { View, ActivityIndicator, StyleSheet, Platform } from 'react-native';
 import * as Google from 'expo-auth-session/providers/google';
 import * as WebBrowser from 'expo-web-browser';
+import * as AppleAuthentication from 'expo-apple-authentication';
 import { googleIosClientId, googleWebClientId } from '../lib/expoEnv';
 import { supabase } from '../lib/supabase';
-import { GoogleButton } from './auth/AuthComponents';
+import { AppleButton, GoogleButton } from './auth/AuthComponents';
 
 WebBrowser.maybeCompleteAuthSession();
 
@@ -18,6 +19,7 @@ export default function OAuthButtons({ onError, onLoadingChange }: Props) {
     iosClientId: googleIosClientId,
     webClientId: googleWebClientId,
   });
+  const [appleLoading, setAppleLoading] = React.useState(false);
 
   useEffect(() => {
     if (response?.type === 'success') {
@@ -38,8 +40,41 @@ export default function OAuthButtons({ onError, onLoadingChange }: Props) {
     }
   }, [response]);
 
+  const signInWithApple = async () => {
+    try {
+      setAppleLoading(true);
+      onLoadingChange?.(true);
+      const cred = await AppleAuthentication.signInAsync({
+        requestedScopes: [
+          AppleAuthentication.AppleAuthenticationScope.FULL_NAME,
+          AppleAuthentication.AppleAuthenticationScope.EMAIL,
+        ],
+      });
+      const token = cred.identityToken;
+      if (!token) {
+        onError('Apple sign-in failed: no token received.');
+        return;
+      }
+      const { error } = await supabase.auth.signInWithIdToken({
+        provider: 'apple',
+        token,
+      });
+      if (error) onError(error.message);
+    } catch (e: any) {
+      if (e?.code === 'ERR_REQUEST_CANCELED') return;
+      onError(e?.message ?? 'Apple sign-in failed.');
+    } finally {
+      setAppleLoading(false);
+      onLoadingChange?.(false);
+    }
+  };
+
   return (
     <View style={s.container}>
+      {Platform.OS === 'ios' ? (
+        <AppleButton onPress={signInWithApple} loading={appleLoading} />
+      ) : null}
+      {Platform.OS === 'ios' ? <View style={{ height: 10 }} /> : null}
       <GoogleButton
         onPress={() => promptAsync()}
         loading={!request}

@@ -16,6 +16,10 @@ test('minutesFromHHmm converts end of day', () => {
   assert.equal(minutesFromHHmm('23:59'), 23 * 60 + 59);
 });
 
+test('minutesFromHHmm treats 24:00 as end of calendar day', () => {
+  assert.equal(minutesFromHHmm('24:00'), 24 * 60);
+});
+
 test('minutesFromHHmm returns null for bad format', () => {
   assert.equal(minutesFromHHmm('9:00 AM'), null);
   assert.equal(minutesFromHHmm(''), null);
@@ -60,6 +64,11 @@ test('buildWalkTimeSlots falls back to 06:00–22:00 when end ≤ start', () => 
   const fallback = buildWalkTimeSlots(DAY, '10:00', '08:00', 30);
   const normal   = buildWalkTimeSlots(DAY, '06:00', '22:00', 30);
   assert.equal(fallback.length, normal.length);
+});
+
+test('buildWalkTimeSlots full day 00:00–24:00 with 30m walk has 48 half-hour starts', () => {
+  const slots = buildWalkTimeSlots(DAY, '00:00', '24:00', 30);
+  assert.equal(slots.length, 48);
 });
 
 test('buildWalkTimeSlots slot isos are valid ISO strings', () => {

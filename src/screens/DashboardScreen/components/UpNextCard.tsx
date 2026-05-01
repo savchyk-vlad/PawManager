@@ -67,7 +67,7 @@ export function UpNextCard({ walk, parseWalkDate }: Props) {
             />
             {isLate ? (
               <View>
-                <Text style={styles.overdueLabel}>Overdue</Text>
+                <Text style={styles.overdueLabel}>Waiting</Text>
                 {minsToWindowEnd != null && minsToWindowEnd >= 0 && (
                   <Text style={styles.overdueSub}>
                     {minsToWindowEnd === 0

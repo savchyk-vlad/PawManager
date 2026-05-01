@@ -13,20 +13,24 @@ export function EditClientInfoSection({
   name,
   phone,
   address,
+  keyLocation,
   price,
   onChangeName,
   onChangePhone,
   onChangeAddress,
+  onChangeKeyLocation,
   onChangePrice,
 }: {
   styles: Styles;
   name: string;
   phone: string;
   address: string;
+  keyLocation: string;
   price: string;
   onChangeName: (t: string) => void;
   onChangePhone: (t: string) => void;
   onChangeAddress: (t: string) => void;
+  onChangeKeyLocation: (t: string) => void;
   onChangePrice: (t: string) => void;
 }) {
   return (
@@ -49,6 +53,14 @@ export function EditClientInfoSection({
           value={address}
           onChangeText={onChangeAddress}
           placeholder="123 Main St"
+          autoCapitalize="sentences"
+        />
+        <View style={styles.divider} />
+        <FormField
+          label="Key location"
+          value={keyLocation}
+          onChangeText={onChangeKeyLocation}
+          placeholder="Lockbox, door code…"
           autoCapitalize="sentences"
         />
         <View style={styles.divider} />

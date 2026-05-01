@@ -8,7 +8,7 @@ A React Native (**Expo**) app for **dog walking businesses**: clients and dogs, 
 - **React Navigation** — native stack + bottom tabs (`src/navigation/`)
 - **Zustand** — clients, walks, settings, auth
 - **Supabase** — `@supabase/supabase-js`
-- **date-fns**, **react-native-svg**, **expo-notifications**, **expo-background-fetch**, and other modules listed in `package.json`
+- **date-fns**, **react-native-svg**, **expo-notifications**, **expo-background-task**, and other modules listed in `package.json`
 
 ## Main navigation
 

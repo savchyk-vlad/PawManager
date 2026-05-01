@@ -34,6 +34,7 @@ test('walkCharge uniform rate multiplies by unique dog count', () => {
     address: '',
     phone: '',
     pricePerWalk: 25,
+    keyLocation: '',
     dogs: [],
   } satisfies Client;
   const walk = makeWalk({ dogIds: ['d1', 'd2', 'd2'] });
@@ -47,6 +48,7 @@ test('walkCharge sums per-dog rates', () => {
     address: '',
     phone: '',
     pricePerWalk: 100,
+    keyLocation: '',
     dogs: [],
   } satisfies Client;
   const walk = makeWalk({
@@ -63,6 +65,7 @@ test('walkCharge falls back to client rate for dogs missing from perDogPrices ma
     address: '',
     phone: '',
     pricePerWalk: 30,
+    keyLocation: '',
     dogs: [],
   } satisfies Client;
   const walk = makeWalk({
@@ -88,6 +91,7 @@ test('effectivePricePerWalk uses override when set (uniform)', () => {
     address: '',
     phone: '',
     pricePerWalk: 20,
+    keyLocation: '',
     dogs: [],
   } satisfies Client;
   assert.equal(
@@ -99,7 +103,7 @@ test('effectivePricePerWalk uses override when set (uniform)', () => {
 
 test('calcEarnedToday respects price override on a walk', () => {
   const clients: Client[] = [
-    { id: 'c1', name: 'A', address: '', phone: '', pricePerWalk: 20, dogs: [] },
+    { id: 'c1', name: 'A', address: '', phone: '', pricePerWalk: 20, keyLocation: '', dogs: [] },
   ];
   const now = new Date('2026-04-27T12:00:00.000Z');
   const walks: Walk[] = [
@@ -116,7 +120,7 @@ test('calcEarnedToday respects price override on a walk', () => {
 
 test('calcEarnedToday sums per-dog pricing', () => {
   const clients: Client[] = [
-    { id: 'c1', name: 'A', address: '', phone: '', pricePerWalk: 10, dogs: [] },
+    { id: 'c1', name: 'A', address: '', phone: '', pricePerWalk: 10, keyLocation: '', dogs: [] },
   ];
   const now = new Date('2026-04-27T12:00:00.000Z');
   const walks: Walk[] = [
@@ -133,8 +137,8 @@ test('calcEarnedToday sums per-dog pricing', () => {
 
 test('calcEarnedToday sums done-today walk charges by client price', () => {
   const clients: Client[] = [
-    { id: 'c1', name: 'A', address: '', phone: '', pricePerWalk: 20, dogs: [] },
-    { id: 'c2', name: 'B', address: '', phone: '', pricePerWalk: 30, dogs: [] },
+    { id: 'c1', name: 'A', address: '', phone: '', pricePerWalk: 20, keyLocation: '', dogs: [] },
+    { id: 'c2', name: 'B', address: '', phone: '', pricePerWalk: 30, keyLocation: '', dogs: [] },
   ];
   const now = new Date('2026-04-27T12:00:00.000Z');
   const walks: Walk[] = [

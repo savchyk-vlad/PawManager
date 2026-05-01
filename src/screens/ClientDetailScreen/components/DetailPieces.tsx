@@ -1,5 +1,5 @@
 import React from "react";
-import { Text, TouchableOpacity, View } from "react-native";
+import { ScrollView, Text, TouchableOpacity, View } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { Ionicons } from "@expo/vector-icons";
@@ -48,16 +48,17 @@ export function DogCard({
 
   return (
     <TouchableOpacity
-      style={styles.dogListItem}
+      style={styles.dogClientCard}
       activeOpacity={0.92}
-      onPress={() => navigation.navigate("DogDetail", { clientId, dogId: dog.id })}>
-      <View style={styles.dogCardHeader}>
+      onPress={() => navigation.navigate("DogDetail", { clientId, dogId: dog.id, allowDelete: true })}>
+      <View style={styles.dogClientCardTop}>
+        <View style={styles.dogCardHeader}>
         <View style={styles.dogAvatarLg}>
           <Text style={{ fontSize: 32 }}>{dog.emoji}</Text>
         </View>
         <View style={{ flex: 1 }}>
           <Text style={styles.dogName}>{dog.name}</Text>
-          <Text style={styles.dogBreed}>{dog.breed}</Text>
+          <Text style={styles.dogBreed}>{dog.breed || "Breed not provided"}</Text>
           {(dog.age > 0 || dog.weight > 0) && (
             <Text style={styles.dogMeta}>
               {dog.age > 0 ? `${dog.age} yrs` : ""}
@@ -67,9 +68,14 @@ export function DogCard({
           )}
         </View>
         <Ionicons name="chevron-forward" size={16} color={colors.textMuted} />
+        </View>
       </View>
 
-      <View style={styles.dogStatStrip}>
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={styles.dogStatStrip}
+      >
         <View style={styles.dogStat}>
           <Ionicons name="paw-outline" size={12} color={colors.textMuted} />
           <Text style={styles.dogStatTxt}>
@@ -84,21 +90,13 @@ export function DogCard({
             </Text>
           </View>
         ) : null}
-        {dog.keyLocation ? (
-          <View style={styles.dogStat}>
-            <Ionicons name="key-outline" size={12} color={colors.textMuted} />
-            <Text style={styles.dogStatTxt} numberOfLines={1}>
-              {dog.keyLocation}
-            </Text>
-          </View>
-        ) : null}
         {dog.medical ? (
           <View style={[styles.dogStat, styles.dogStatAmber]}>
             <Ionicons name="alert-circle-outline" size={12} color={colors.amberDefault} />
             <Text style={[styles.dogStatTxt, { color: colors.amberDefault }]}>Medical notes</Text>
           </View>
         ) : null}
-      </View>
+      </ScrollView>
 
       {dog.traits.length > 0 && (
         <View style={styles.traitRow}>
@@ -144,7 +142,6 @@ export function DogCard({
           />
         ) : null}
         {dog.medical ? <InfoRow label="Medical" value={dog.medical} styles={styles} /> : null}
-        {dog.keyLocation ? <InfoRow label="Key" value={dog.keyLocation} styles={styles} /> : null}
       </View>
     </TouchableOpacity>
   );
@@ -191,17 +188,18 @@ export function WalkRow({
         <Text style={styles.walkMeta}>
           {walk.actualDurationMinutes ?? walk.durationMinutes} min · ${billTotal}
         </Text>
-        {walk.status === "done" && (
-          <View style={[styles.paymentBadge, { backgroundColor: pay.bg }]}>
-            <Text style={[styles.paymentBadgeText, { color: pay.color }]}>{pay.label}</Text>
-          </View>
-        )}
       </View>
-      <View style={styles.walkRight}>
-        <View style={[styles.statusBadge, { backgroundColor: st.bg }]}>
-          <Text style={[styles.statusText, { color: st.color }]}>{st.label}</Text>
+      <View style={styles.walkRightCol}>
+        <View style={styles.walkBadgesTop}>
+          {walk.status === "done" && (
+            <View style={[styles.paymentBadge, { backgroundColor: pay.bg }]}>
+              <Text style={[styles.paymentBadgeText, { color: pay.color }]}>{pay.label}</Text>
+            </View>
+          )}
+          <View style={[styles.statusBadge, { backgroundColor: st.bg }]}>
+            <Text style={[styles.statusText, { color: st.color }]}>{st.label}</Text>
+          </View>
         </View>
-        <Ionicons name="chevron-forward" size={16} color={colors.textMuted} />
       </View>
     </TouchableOpacity>
   );

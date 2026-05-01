@@ -41,12 +41,9 @@ export function ClientDetailDogsTab({
         </>
       ) : (
         <>
-          <View style={styles.card}>
-            {activeDogs.map((dog, i) => (
-              <React.Fragment key={dog.id}>
-                <DogCard dog={dog} clientId={clientId} styles={styles} />
-                {i < activeDogs.length - 1 ? <View style={styles.rowDivider} /> : null}
-              </React.Fragment>
+          <View style={styles.dogsCardsList}>
+            {activeDogs.map((dog) => (
+              <DogCard key={dog.id} dog={dog} clientId={clientId} styles={styles} />
             ))}
           </View>
           <TouchableOpacity

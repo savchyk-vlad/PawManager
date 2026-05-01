@@ -51,6 +51,8 @@ export default function DogDetailScreen() {
   const [walkShowCount, setWalkShowCount] = useState(6);
   const [removing, setRemoving] = useState(false);
   const pagerRef = useRef<ScrollView>(null);
+  const allowDelete = route.params.allowDelete !== false;
+  const allowEdit = route.params.allowDelete !== false;
 
   const [fontsLoaded] = useFonts({
     DMSans_400Regular,
@@ -136,6 +138,7 @@ export default function DogDetailScreen() {
   const visibleWalks = dogWalks.slice(0, walkShowCount);
 
   const handleDeleteDog = () => {
+    if (!allowDelete) return;
     if (removing) return;
     Alert.alert("Remove dog?", `${dog.name} will be removed from this client.`, [
       { text: "Cancel", style: "cancel" },
@@ -171,6 +174,7 @@ export default function DogDetailScreen() {
         navigation={navigation}
         font={font}
         styles={styles}
+        allowEdit={allowEdit}
       />
 
       <DogDetailTabBar tab={tab} onSelectTab={selectTab} font={font} styles={styles} />
@@ -189,7 +193,7 @@ export default function DogDetailScreen() {
           client={client}
           font={font}
           styles={styles}
-          onDeleteDog={handleDeleteDog}
+          onDeleteDog={allowDelete ? handleDeleteDog : undefined}
           removing={removing}
           screenW={screenW}
         />
@@ -205,6 +209,7 @@ export default function DogDetailScreen() {
           styles={styles}
           screenW={screenW}
           navigation={navigation}
+          allowOpenWalks={allowEdit}
         />
       </ScrollView>
     </View>

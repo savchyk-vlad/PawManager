@@ -17,7 +17,7 @@ export function PaymentsHeader({ monthLabel }: Props) {
 
 const styles = StyleSheet.create({
   header: {
-    marginBottom: 16,
+    marginBottom: 14,
   },
   title: {
     fontSize: 26,

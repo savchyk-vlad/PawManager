@@ -28,7 +28,7 @@ export function DogDetailProfileTab({
   client: Client;
   font: FontSet;
   styles: Styles;
-  onDeleteDog: () => void;
+  onDeleteDog?: () => void;
   removing: boolean;
   screenW: number;
 }) {
@@ -38,16 +38,31 @@ export function DogDetailProfileTab({
         style={styles.pageScroll}
         contentContainerStyle={styles.pageContent}
         showsVerticalScrollIndicator={false}>
-        {dog.keyLocation ? (
+        {client.keyLocation || dog.medical ? (
           <>
             <Text style={[styles.secTitle, { fontFamily: font.semi }]}>Walker notes</Text>
-            <View style={styles.alertCard}>
-              <Text style={styles.alertIcon}>⚠</Text>
-              <View style={{ flex: 1 }}>
-                <Text style={[styles.alertTitle, { fontFamily: font.bold }]}>Heads up</Text>
-                <Text style={[styles.alertBody, { fontFamily: font.regular }]}>{dog.keyLocation}</Text>
+            {client.keyLocation ? (
+              <View style={styles.alertCard}>
+                <Text style={styles.alertIcon}>⚠</Text>
+                <View style={{ flex: 1 }}>
+                  <Text style={[styles.ik, { fontFamily: font.semi, marginBottom: 6 }]}>Client notes</Text>
+                  <Text style={[styles.alertBody, { fontFamily: font.regular }]}>
+                    {client.keyLocation}
+                  </Text>
+                </View>
               </View>
-            </View>
+            ) : null}
+            {dog.medical ? (
+              <View style={[styles.alertCard, { marginTop: client.keyLocation ? 10 : 0 }]}>
+                <Text style={styles.alertIcon}>⚠</Text>
+                <View style={{ flex: 1 }}>
+                  <Text style={[styles.alertTitle, { fontFamily: font.bold }]}>Medical notes</Text>
+                  <Text style={[styles.alertBody, { fontFamily: font.regular }]}>
+                    {dog.medical}
+                  </Text>
+                </View>
+              </View>
+            ) : null}
           </>
         ) : null}
 
@@ -120,8 +135,8 @@ export function DogDetailProfileTab({
             />
           )}
           <Row
-            label="Gate code"
-            value={dog.keyLocation || "Gate code not provided"}
+            label="Key location"
+            value={client.keyLocation || "Key location not provided"}
             font={font}
             notProvidedToken={NOT_PROVIDED}
             styles={styles}
@@ -129,13 +144,15 @@ export function DogDetailProfileTab({
           />
         </View>
 
-        <DangerZoneAction
-          buttonText="Delete dog"
-          onPress={onDeleteDog}
-          disabled={removing}
-          labelStyle={styles.dangerZoneLabelPad}
-          style={styles.dangerZoneButtonPad}
-        />
+        {onDeleteDog ? (
+          <DangerZoneAction
+            buttonText="Delete dog"
+            onPress={onDeleteDog}
+            disabled={removing}
+            labelStyle={styles.dangerZoneLabelPad}
+            style={styles.dangerZoneButtonPad}
+          />
+        ) : null}
       </ScrollView>
     </View>
   );

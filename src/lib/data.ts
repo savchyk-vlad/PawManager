@@ -7,6 +7,7 @@ export const clients: Client[] = [
     address: '1420 Pine St, Seattle WA',
     phone: '(206) 555-0101',
     pricePerWalk: 25,
+    keyLocation: 'Under the blue flowerpot',
     dogs: [
       {
         id: 'd1',
@@ -23,7 +24,6 @@ export const clients: Client[] = [
         vet: 'Dr. Smith',
         vetPhone: '(206) 555-0190',
         medical: 'Allergic to chicken treats',
-        keyLocation: 'Under the blue flowerpot',
       },
     ],
   },
@@ -33,6 +33,7 @@ export const clients: Client[] = [
     address: '820 Oak Ave, Seattle WA',
     phone: '(206) 555-0202',
     pricePerWalk: 30,
+    keyLocation: 'Key box by the garage, code 1234',
     dogs: [
       {
         id: 'd2',
@@ -48,7 +49,6 @@ export const clients: Client[] = [
         vet: 'Dr. Lee',
         vetPhone: '(206) 555-0220',
         medical: 'None',
-        keyLocation: 'Key box by the garage, code 1234',
       },
     ],
   },
@@ -58,6 +58,7 @@ export const clients: Client[] = [
     address: '305 Maple Dr, Seattle WA',
     phone: '(206) 555-0303',
     pricePerWalk: 35,
+    keyLocation: 'Door code: 5678',
     dogs: [
       {
         id: 'd3',
@@ -70,7 +71,6 @@ export const clients: Client[] = [
         vet: 'Dr. Park',
         vetPhone: '(206) 555-0330',
         medical: 'None',
-        keyLocation: 'Door code: 5678',
       },
       {
         id: 'd4',
@@ -86,7 +86,6 @@ export const clients: Client[] = [
         vet: 'Dr. Park',
         vetPhone: '(206) 555-0330',
         medical: 'None',
-        keyLocation: 'Door code: 5678',
       },
     ],
   },
@@ -96,6 +95,7 @@ export const clients: Client[] = [
     address: '750 Cedar St, Seattle WA',
     phone: '(206) 555-0404',
     pricePerWalk: 25,
+    keyLocation: 'Hidden under the mat',
     dogs: [
       {
         id: 'd5',
@@ -111,7 +111,6 @@ export const clients: Client[] = [
         vet: 'Dr. Johnson',
         vetPhone: '(206) 555-0440',
         medical: 'Hip dysplasia — no long walks',
-        keyLocation: 'Hidden under the mat',
       },
     ],
   },

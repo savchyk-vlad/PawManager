@@ -2,7 +2,6 @@ import React from "react";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { format, isSameDay, isToday } from "date-fns";
 import { Ionicons } from "@expo/vector-icons";
-import { isUserWorkingDay } from "../../../lib/workingDays";
 import { colors } from "../../../theme";
 
 type CalendarCell = { type: "empty" } | { type: "day"; date: Date };
@@ -11,7 +10,6 @@ type Props = {
   monthDate: Date;
   weekRows: CalendarCell[][];
   selectedDate: Date | null;
-  workingDays: boolean[];
   walkCountForDate: (date: Date) => number;
   onChangeMonth: (delta: -1 | 1) => void;
   onSelectDate: (date: Date) => void;
@@ -21,7 +19,6 @@ export function ScheduleCalendarSection({
   monthDate,
   weekRows,
   selectedDate,
-  workingDays,
   walkCountForDate,
   onChangeMonth,
   onSelectDate,
@@ -56,27 +53,22 @@ export function ScheduleCalendarSection({
               const today = isToday(cell.date);
               const walksOnDay = walkCountForDate(cell.date);
               const dots = Math.min(walksOnDay, 3);
-              const canSelectDay = isUserWorkingDay(cell.date, workingDays) || walksOnDay > 0;
               return (
                 <TouchableOpacity
                   key={format(cell.date, "yyyy-MM-dd")}
                   style={[
                     styles.dayCell,
                     selected && styles.dayCellSelected,
-                    !canSelectDay && styles.dayCellMuted,
                   ]}
-                  disabled={!canSelectDay}
                   onPress={() => {
-                    if (!canSelectDay) return;
                     onSelectDate(cell.date);
                   }}
-                  activeOpacity={canSelectDay ? 0.8 : 1}>
+                  activeOpacity={0.8}>
                   <Text
                     style={[
                       styles.dayNum,
                       today && styles.dayNumToday,
                       selected && styles.dayNumSelected,
-                      !canSelectDay && styles.dayNumMuted,
                     ]}>
                     {format(cell.date, "d")}
                   </Text>
@@ -136,9 +128,7 @@ const styles = StyleSheet.create({
     paddingTop: 4,
   },
   dayCellSelected: { backgroundColor: "#182410" },
-  dayCellMuted: { opacity: 0.38 },
   dayNum: { fontSize: 12, color: colors.textSecondary, width: 24, height: 24, textAlign: "center", lineHeight: 24 },
-  dayNumMuted: { color: colors.textMuted },
   dayNumToday: {
     backgroundColor: colors.greenDeep,
     color: colors.greenText,

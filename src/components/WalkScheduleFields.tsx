@@ -9,8 +9,9 @@ import {
 } from '../store/settingsStore';
 import { useWalkScheduling } from '../hooks/useWalkScheduling';
 import { ScheduleCalendar } from './ScheduleCalendar';
-import { TimeSlotsCarousel } from './TimeSlotsCarousel';
+import { WalkTimePicker } from './WalkTimePicker';
 import { colors } from '../theme';
+import type { Walk as WalkType } from '../types';
 
 type Props = {
   walks: Walk[];
@@ -26,9 +27,15 @@ type Props = {
   onCustomDurationChange: (value: string) => void;
   onNotesChange: (value: string) => void;
   excludeWalkId?: string;
+  getTimeConflictLabel?: (walk: WalkType) => { title: string; subtitle?: string };
+  getTimeConflictDetails?: (walk: WalkType) => {
+    client?: string;
+    dogs?: Array<{ emoji?: string; name: string }>;
+  };
   onPickDate?: () => void;
   onPickTime?: () => void;
   onPickDuration?: () => void;
+  showNoTimeAvailableHint?: boolean;
   notesLabel?: string;
   notesPlaceholder?: string;
   onNotesFocus?: () => void;
@@ -48,25 +55,27 @@ export function WalkScheduleFields({
   onCustomDurationChange,
   onNotesChange,
   excludeWalkId,
+  getTimeConflictLabel,
+  getTimeConflictDetails,
   onPickDate,
   onPickTime,
   onPickDuration,
+  showNoTimeAvailableHint = true,
   notesLabel = 'NOTES (OPTIONAL)',
   notesPlaceholder = 'Special instructions, gate codes…',
   onNotesFocus,
 }: Props) {
   const preferredDuration = useSettingsStore((s) => s.defaultWalkDuration);
 
-  const { slots, calendarCells, takenSlotKeys, takenByDayMs } = useWalkScheduling({
+  const { calendarCells, takenByDayMs, noTimeAvailableThisDay } = useWalkScheduling({
     walks,
     selectedTime,
     monthDate,
     duration,
     excludeWalkId,
-    onSelectedTimeChange,
   });
 
-  useFormLayoutAnimationKey(`${monthDate.getTime()}-${slots.length}`);
+  useFormLayoutAnimationKey(`${monthDate.getTime()}-${duration}-${noTimeAvailableThisDay}`);
 
   return (
     <>
@@ -80,18 +89,23 @@ export function WalkScheduleFields({
         onSelectedTimeChange={onSelectedTimeChange}
         onPickDate={onPickDate}
       />
-      <TimeSlotsCarousel
-        slots={slots}
-        selectedTime={selectedTime}
-        takenSlotKeys={takenSlotKeys}
-        onSelectedTimeChange={onSelectedTimeChange}
-        onPickTime={onPickTime}
-        showRequiredHint={!timePicked}
+      <WalkTimePicker
+        valueIso={selectedTime}
+        onChange={onSelectedTimeChange}
+        onOpen={onPickTime}
+        walks={walks}
+        durationMinutes={duration}
+        excludeWalkId={excludeWalkId}
+        getConflictLabel={getTimeConflictLabel}
+        getConflictDetails={getTimeConflictDetails}
       />
-      {slots.length === 0 && (
+      {!timePicked && (
+        <Text style={s.requiredHint}>Pick a time to continue</Text>
+      )}
+      {showNoTimeAvailableHint && noTimeAvailableThisDay && (
         <Text style={s.shiftEmptyHint}>
-          Nothing fits inside your shift with this duration. Choose a shorter walk or widen shift
-          hours in Settings.
+          No start times left for this day with this duration. Try a shorter walk or pick another
+          day.
         </Text>
       )}
 
@@ -106,8 +120,8 @@ export function WalkScheduleFields({
             style={[
               s.seg,
               duration === d && s.segActive,
-              d === preferredDuration && s.segPreferred,
             ]}
+            activeOpacity={1}
             onPress={() => {
               onDurationChange(d);
               onCustomDurationChange('');
@@ -194,9 +208,8 @@ const s = StyleSheet.create({
     backgroundColor: colors.surface, alignItems: 'center',
     borderWidth: 1, borderColor: colors.border,
   },
-  segPreferred: {
-    borderColor: 'rgba(92, 175, 114, 0.45)',
-  },
+  // Selected duration should be clearly green; we disable TouchableOpacity
+  // dimming (activeOpacity=1) to prevent it from darkening after tap.
   segActive: { backgroundColor: colors.greenDeep, borderColor: colors.greenDefault },
   segText: { fontSize: 13, fontWeight: '500', color: colors.textSecondary },
   segTextActive: { color: colors.greenDefault, fontWeight: '600' },
@@ -241,5 +254,11 @@ const s = StyleSheet.create({
     marginTop: 4,
     marginBottom: 4,
     lineHeight: 17,
+  },
+  requiredHint: {
+    fontSize: 12,
+    color: colors.amberDefault,
+    marginTop: 4,
+    marginBottom: 4,
   },
 });

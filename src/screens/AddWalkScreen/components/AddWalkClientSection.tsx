@@ -8,6 +8,8 @@ type Styles = {
   sectionLabel: object;
   clientPending: object;
   borderedCard: object;
+  borderedCardHeader: object;
+  borderedCardHeaderLabel: object;
   clientRow: object;
   rowBorder: object;
   clientRowActive: object;
@@ -39,45 +41,94 @@ export function AddWalkClientSection({
   return (
     <>
       <Text style={styles.sectionLabel}>CLIENTS</Text>
-      {clientMatch && selectedClientId && String(selectedClientId).startsWith("temp-") && (
-        <Text style={styles.clientPending}>Saving new client to server…</Text>
-      )}
+      {clientMatch &&
+        selectedClientId &&
+        String(selectedClientId).startsWith("temp-") && (
+          <Text style={styles.clientPending}>Saving new client to server…</Text>
+        )}
       <View style={styles.borderedCard}>
         {schedulableClients.length === 0 ? (
           <View style={styles.emptyClients}>
-            <Text style={styles.emptyClientsTitle}>No clients with dogs available</Text>
+            <Text style={styles.emptyClientsTitle}>
+              No clients with dogs available
+            </Text>
             <Text style={styles.emptyClientsText}>
               Add a dog to a client first, then you can schedule a walk.
             </Text>
           </View>
         ) : (
-          schedulableClients.map((client, i) => {
-            const active = Boolean(selectedClient && client.id === selectedClient.id);
-            return (
-              <TouchableOpacity
-                key={client.id}
-                style={[
-                  styles.clientRow,
-                  i < schedulableClients.length - 1 && styles.rowBorder,
-                  active && styles.clientRowActive,
-                ]}
-                onPress={() => onSelectClient(client)}>
-                <View style={[styles.clientInitial, active && styles.clientInitialActive]}>
-                  <Text style={[styles.clientInitialText, active && { color: colors.greenDefault }]}>
-                    {client.name[0]}
-                  </Text>
-                </View>
-                <View style={{ flex: 1 }}>
-                  <Text style={styles.clientName}>{client.name}</Text>
-                  <Text style={styles.clientMeta}>
-                    {client.dogs.filter((d) => !d.isDeleted).map((d) => d.name).join(", ")} · $
-                    {client.pricePerWalk}
-                  </Text>
-                </View>
-                {active && <Ionicons name="checkmark-circle" size={20} color={colors.greenDefault} />}
-              </TouchableOpacity>
-            );
-          })
+          <>
+            <View style={styles.borderedCardHeader}>
+              <Text style={styles.borderedCardHeaderLabel}>Active clients</Text>
+            </View>
+            {schedulableClients.map((client, i) => {
+              // Use the id directly so selection doesn't briefly flicker during re-renders
+              // (e.g. while resolving temp client ids).
+              const active = Boolean(
+                selectedClientId && client.id === selectedClientId,
+              );
+              const dogNames = client.dogs
+                .filter((d) => !d.isDeleted)
+                .map((d) => d.name)
+                .join(", ");
+              return (
+                <TouchableOpacity
+                  key={client.id}
+                  style={[
+                    styles.clientRow,
+                    i < schedulableClients.length - 1 && styles.rowBorder,
+                    active && styles.clientRowActive,
+                  ]}
+                  activeOpacity={1}
+                  onPress={() => onSelectClient(client)}>
+                  <View style={[styles.clientInitial]}>
+                    <Text
+                      style={[
+                        styles.clientInitialText,
+                        active && { color: colors.greenDefault },
+                      ]}>
+                      {client.name[0]}
+                    </Text>
+                  </View>
+                  <View style={{ flex: 1, minWidth: 0 }}>
+                    <Text style={styles.clientName} numberOfLines={1}>
+                      {client.name}
+                    </Text>
+                    <Text style={styles.clientMeta} numberOfLines={1}>
+                      {dogNames}
+                    </Text>
+                  </View>
+
+                  <View style={{ alignItems: "flex-end", gap: 8 }}>
+                    <View
+                      style={{
+                        backgroundColor: active
+                          ? "rgba(92, 175, 114, 0.12)"
+                          : "rgba(255,255,255,0.06)",
+                        borderWidth: 1,
+                        borderColor: active
+                          ? "rgba(92, 175, 114, 0.28)"
+                          : "rgba(255,255,255,0.08)",
+                        borderRadius: 999,
+                        paddingHorizontal: 10,
+                        paddingVertical: 6,
+                      }}>
+                      <Text
+                        style={{
+                          color: active
+                            ? colors.greenDefault
+                            : colors.textSecondary,
+                          fontSize: 12,
+                          fontWeight: "700",
+                        }}>
+                        ${client.pricePerWalk}/walk
+                      </Text>
+                    </View>
+                  </View>
+                </TouchableOpacity>
+              );
+            })}
+          </>
         )}
       </View>
     </>

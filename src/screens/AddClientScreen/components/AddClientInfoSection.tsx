@@ -14,10 +14,12 @@ export function AddClientInfoSection({
   name,
   phone,
   address,
+  keyLocation,
   price,
   onChangeName,
   onChangePhone,
   onChangeAddress,
+  onChangeKeyLocation,
   onChangePrice,
   defaultRatePlaceholder,
   defaultRateHintFragment,
@@ -26,10 +28,12 @@ export function AddClientInfoSection({
   name: string;
   phone: string;
   address: string;
+  keyLocation: string;
   price: string;
   onChangeName: (t: string) => void;
   onChangePhone: (t: string) => void;
   onChangeAddress: (t: string) => void;
+  onChangeKeyLocation: (t: string) => void;
   onChangePrice: (t: string) => void;
   defaultRatePlaceholder: string;
   defaultRateHintFragment: string;
@@ -54,6 +58,14 @@ export function AddClientInfoSection({
           value={address}
           onChangeText={onChangeAddress}
           placeholder="123 Main St, City"
+          autoCapitalize="sentences"
+        />
+        <View style={styles.cardDivider} />
+        <FormField
+          label="Key location"
+          value={keyLocation}
+          onChangeText={onChangeKeyLocation}
+          placeholder="Lockbox, door code…"
           autoCapitalize="sentences"
         />
         <View style={styles.cardDivider} />

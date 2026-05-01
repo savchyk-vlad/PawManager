@@ -19,6 +19,8 @@ import { useAppStore } from "../../store";
 import { RootStackParamList } from "../../navigation";
 import { ConfirmDeleteSheet } from "../../components/ConfirmDeleteSheet";
 import { colors } from "../../theme";
+import { TimeTakenModal } from "../../components/TimeTakenModal";
+import { findOverlappingWalk } from "../../lib/schedulingOverlap";
 import { applyFieldsFromWalk } from "./applyFieldsFromWalk";
 import { EditWalkClientSummary } from "./components/EditWalkClientSummary";
 import { EditWalkDangerActions } from "./components/EditWalkDangerActions";
@@ -41,6 +43,7 @@ export default function EditWalkScreen() {
   const [notes, setNotes] = useState("");
   const [dogPrices, setDogPrices] = useState<Record<string, string>>({});
   const [saving, setSaving] = useState(false);
+  const [takenWalkId, setTakenWalkId] = useState<string | null>(null);
   const [cancelling, setCancelling] = useState(false);
   const [showCancelWalkSheet, setShowCancelWalkSheet] = useState(false);
   const leavingAfterCancelRef = useRef(false);
@@ -105,6 +108,18 @@ export default function EditWalkScreen() {
     }
     setSaving(true);
     try {
+      // Prevent rescheduling into an overlapping slot.
+      const conflict = findOverlappingWalk({
+        walks,
+        startIso: selectedTime,
+        durationMinutes: duration,
+        excludeWalkId: walkId,
+      });
+      if (conflict) {
+        setSaving(false);
+        setTakenWalkId(conflict.id);
+        return;
+      }
       await updateScheduledWalk(walkId, {
         scheduledAt: selectedTime,
         durationMinutes: duration,
@@ -217,6 +232,32 @@ export default function EditWalkScreen() {
           duration={duration}
           customDuration={customDuration}
           notes={notes}
+          showNoTimeAvailableHint={!saving}
+          getTimeConflictLabel={(conflictWalk) => {
+            const c = clients.find((x) => x.id === conflictWalk.clientId);
+            const dogNames =
+              c?.dogs
+                .filter((d) => conflictWalk.dogIds.includes(d.id))
+                .map((d) => d.name)
+                .filter(Boolean) ?? [];
+            return {
+              title: "This time is already taken",
+              subtitle: [
+                c?.name ? c.name : null,
+                dogNames.length > 0 ? dogNames.join(", ") : null,
+                `${conflictWalk.durationMinutes} min`,
+              ]
+                .filter(Boolean)
+                .join(" · "),
+            };
+          }}
+          getTimeConflictDetails={(conflictWalk) => {
+            const c = clients.find((x) => x.id === conflictWalk.clientId);
+            const dogs = c?.dogs
+              .filter((d) => conflictWalk.dogIds.includes(d.id))
+              .map((d) => ({ emoji: d.emoji, name: d.name })) ?? [];
+            return { client: c?.name, dogs };
+          }}
           onSelectedTimeChange={setSelectedTime}
           onMonthDateChange={setMonthDate}
           onDurationChange={setDuration}
@@ -264,6 +305,31 @@ export default function EditWalkScreen() {
             : []
         }
       />
+
+      {(() => {
+        const w = takenWalkId ? walks.find((x) => x.id === takenWalkId) : null;
+        const c = w ? clients.find((x) => x.id === w.clientId) : null;
+        const dogs =
+          w && c
+            ? c.dogs
+                .filter((d) => w.dogIds.includes(d.id))
+                .map((d) => ({ emoji: d.emoji, name: d.name }))
+            : [];
+        return w && c ? (
+          <TimeTakenModal
+            visible
+            onClose={() => setTakenWalkId(null)}
+            onViewWalk={() => {
+              setTakenWalkId(null);
+              navigation.navigate("ActiveWalk", { walkId: w.id });
+            }}
+            clientName={c.name}
+            dogs={dogs}
+            scheduledAtIso={w.scheduledAt}
+            durationMinutes={w.durationMinutes}
+          />
+        ) : null;
+      })()}
     </View>
   );
 }

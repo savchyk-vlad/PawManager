@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from "react";
 import {
   Linking,
   ScrollView,
@@ -6,13 +6,12 @@ import {
   Text,
   TouchableOpacity,
   View,
-} from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
-import { Ionicons } from '@expo/vector-icons';
-import { Client, Dog, Walk } from '../../../types';
-import { colors } from '../../../theme';
-import { effectivePricePerWalk } from '../../../lib/walkMetrics';
-import { ActiveWalkTopBar } from './ActiveWalkTopBar';
+} from "react-native";
+import { Ionicons } from "@expo/vector-icons";
+import { Client, Dog, Walk } from "../../../types";
+import { colors } from "../../../theme";
+import { effectivePricePerWalk } from "../../../lib/walkMetrics";
+import { ActiveWalkTopBar } from "./ActiveWalkTopBar";
 
 type Props = {
   walk: Walk;
@@ -35,7 +34,57 @@ type Props = {
   onEdit: () => void;
   onStartWalk: () => void;
   onFinishWalk: () => void;
+  onOpenDog: (dogId: string) => void;
 };
+
+function parseElapsedSeconds(label: string): number {
+  const parts = label.split(":");
+  if (parts.length !== 2) return 0;
+  const m = Number.parseInt(parts[0] ?? "0", 10);
+  const s = Number.parseInt(parts[1] ?? "0", 10);
+  if (!Number.isFinite(m) || !Number.isFinite(s)) return 0;
+  return Math.max(0, m * 60 + s);
+}
+
+function Card({
+  title,
+  children,
+  last,
+}: {
+  title: string;
+  children: React.ReactNode;
+  last?: boolean;
+}) {
+  return (
+    <View style={[s.card, last && s.cardLast]}>
+      <View style={s.cardHead}>
+        <Text style={s.cardHeadText}>{title}</Text>
+      </View>
+      {children}
+    </View>
+  );
+}
+
+function Row({
+  label,
+  value,
+  empty,
+  last,
+}: {
+  label: string;
+  value: string;
+  empty?: boolean;
+  last?: boolean;
+}) {
+  return (
+    <View style={[s.row, last && s.rowLast]}>
+      <Text style={s.rl}>{label}</Text>
+      <Text style={[s.rv, empty && s.rvEmpty]} numberOfLines={2}>
+        {value}
+      </Text>
+    </View>
+  );
+}
 
 export function ActiveWalkMainView({
   walk,
@@ -58,345 +107,305 @@ export function ActiveWalkMainView({
   onEdit,
   onStartWalk,
   onFinishWalk,
+  onOpenDog,
 }: Props) {
+  const plannedSeconds = Math.max(1, walk.durationMinutes) * 60;
+  const elapsedSeconds = isInProgress ? parseElapsedSeconds(elapsedLabel) : 0;
+  const overtime = isInProgress && elapsedSeconds > plannedSeconds;
+  const progressPct = isInProgress
+    ? Math.min((elapsedSeconds / plannedSeconds) * 100, 100)
+    : 0;
+
+  const notesDisplay = useMemo(() => {
+    const trimmed = notesText.trim();
+    return trimmed.length > 0 ? trimmed : "No notes added…";
+  }, [notesText]);
+
   return (
-    <LinearGradient
-      colors={[colors.greenDeep, colors.greenDefault, colors.greenText]}
-      locations={[0, 0.6, 1]}
-      start={{ x: 0.2, y: 0 }}
-      end={{ x: 1, y: 1 }}
-      style={{ flex: 1 }}
-    >
-      <View style={{ paddingTop: topInset, flex: 1 }}>
-        <ScrollView
-          contentContainerStyle={[styles.scroll, { paddingBottom: bottomInset + 24 }]}
-          showsVerticalScrollIndicator={false}
-        >
-          <ActiveWalkTopBar
-            isScheduled={isScheduled}
-            onBack={onBack}
-            onEdit={onEdit}
-          />
+    <View style={[s.safe, { paddingTop: topInset }]}>
+      <ScrollView
+        contentContainerStyle={[s.scroll, { paddingBottom: bottomInset + 24 }]}
+        showsVerticalScrollIndicator={false}
+      >
+        <ActiveWalkTopBar isScheduled={isScheduled} onBack={onBack} onEdit={onEdit} />
 
-          {isInProgress && (
-            <View style={[styles.timerBlock, styles.timerBlockTop]}>
-              <Text style={styles.timer}>{elapsedLabel}</Text>
-              <Text style={styles.timerSub}>of {walk.durationMinutes} min walk</Text>
+        {isInProgress ? (
+          <View style={s.timerSection}>
+            <Text style={s.timer}>{elapsedLabel}</Text>
+            <Text style={s.timerSub}>{walk.durationMinutes} min walk</Text>
+            <View style={s.progressWrap}>
+              <View
+                style={[
+                  s.progressBar,
+                  {
+                    width: `${progressPct}%`,
+                    backgroundColor: overtime ? colors.redDefault : colors.greenDefault,
+                  },
+                ]}
+              />
             </View>
-          )}
-
-          <View style={[styles.actionsRow, styles.actionsRowTop]}>
-            <TouchableOpacity
-              style={styles.actionBtn}
-              onPress={() => client.phone && Linking.openURL(`tel:${client.phone.replace(/[^0-9+]/g, '')}`)}
-            >
-              <Ionicons name="call-outline" size={20} color="white" />
-              <Text style={styles.actionLabel}>Call Owner</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={styles.actionBtn}
-              onPress={() => {
-                const addr = encodeURIComponent(client.address);
-                Linking.openURL(`maps://maps.google.com/maps?daddr=${addr}`);
-              }}
-            >
-              <Ionicons name="location-outline" size={20} color="white" />
-              <Text style={styles.actionLabel}>Navigate</Text>
-            </TouchableOpacity>
           </View>
+        ) : null}
 
-          {isScheduled && (
-            <TouchableOpacity style={[styles.startWalkBtn, styles.primaryWalkAction]} onPress={onStartWalk}>
-              <Ionicons name="play" size={20} color={colors.greenDeep} style={{ marginRight: 8 }} />
-              <Text style={styles.startWalkBtnText}>Start walk</Text>
-            </TouchableOpacity>
-          )}
+        <View style={s.actions}>
+          <TouchableOpacity
+            style={s.actionBtn}
+            onPress={() =>
+              client.phone &&
+              Linking.openURL(`tel:${client.phone.replace(/[^0-9+]/g, "")}`)
+            }
+            activeOpacity={0.85}
+          >
+            <Ionicons name="call-outline" size={18} color={colors.textSecondary} />
+            <Text style={s.actionTxt}>Call Owner</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={s.actionBtn}
+            onPress={() => {
+              const addr = encodeURIComponent(client.address);
+              Linking.openURL(`maps://maps.google.com/maps?daddr=${addr}`);
+            }}
+            activeOpacity={0.85}
+          >
+            <Ionicons name="location-outline" size={18} color={colors.textSecondary} />
+            <Text style={s.actionTxt}>Navigate</Text>
+          </TouchableOpacity>
+        </View>
 
-          {isInProgress && (
-            <TouchableOpacity style={[styles.finishBtn, styles.primaryWalkAction]} onPress={onFinishWalk}>
-              <Text style={styles.finishBtnText}>Finish Walk</Text>
-            </TouchableOpacity>
-          )}
+        {isScheduled && (
+          <TouchableOpacity style={s.primaryBtn} onPress={onStartWalk} activeOpacity={0.85}>
+            <Text style={s.primaryBtnText}>Start walk</Text>
+          </TouchableOpacity>
+        )}
+        {isInProgress && (
+          <TouchableOpacity style={s.primaryBtn} onPress={onFinishWalk} activeOpacity={0.85}>
+            <Text style={s.primaryBtnText}>Finish walk</Text>
+          </TouchableOpacity>
+        )}
 
-          {(isScheduled || isInProgress) && (
-            <View style={styles.compCard}>
-              <Text style={styles.compCardTitle}>Schedule</Text>
-              <View style={styles.compDetailRow}>
-                <Text style={styles.compDetailLabel}>When</Text>
-                <Text style={styles.compDetailValue}>{scheduleWhen}</Text>
-              </View>
-              <View style={[styles.compDetailRow, { borderBottomWidth: 0, paddingBottom: 2 }]}>
-                <Text style={styles.compDetailLabel}>Planned duration</Text>
-                <Text style={styles.compDetailValue}>{walk.durationMinutes} min</Text>
-              </View>
-            </View>
-          )}
+        <Card title="Schedule">
+          <Row label="When" value={scheduleWhen} />
+          <Row label="Planned duration" value={`${walk.durationMinutes} min`} last />
+        </Card>
 
-          {isScheduled && isLateToStart && (
-            <View style={[styles.lateNotice, { marginBottom: 12 }]}>
-              <Ionicons name="alert-circle-outline" size={22} color={colors.amberDefault} style={{ marginTop: 1 }} />
-              <View style={{ flex: 1 }}>
-                <Text style={styles.lateNoticeTitle}>Overdue to start</Text>
-                <Text style={styles.lateNoticeSub}>
-                  You can still start this walk before the planned window ends ({endTimeLabel}). After
-                  that, it will show as missed.
-                </Text>
-              </View>
-            </View>
-          )}
+        {isScheduled && isLateToStart && (
+          <View style={s.lateNotice}>
+            <Ionicons name="alert-circle-outline" size={18} color={colors.amberDefault} />
+            <Text style={s.lateNoticeText}>
+              Waiting to start. You can start before the window ends ({endTimeLabel}).
+            </Text>
+          </View>
+        )}
 
-          <View style={styles.compCard}>
-            <Text style={styles.compCardTitle}>Client information</Text>
-            <View style={styles.compDetailRow}>
-              <Text style={styles.compDetailLabel}>Name</Text>
-              <Text style={styles.compDetailValue}>{client.name}</Text>
-            </View>
-            {client.phone.trim() ? (
+        <Card title="Client information">
+          <Row label="Name" value={client.name} />
+          <Row
+            label="Phone"
+            value={client.phone.trim() || "—"}
+            empty={!client.phone.trim()}
+          />
+          <Row
+            label="Address"
+            value={client.address.trim() || "—"}
+            empty={!client.address.trim()}
+            last
+          />
+        </Card>
+
+        <Card title="Dogs in this walk">
+          {dogs.length > 0 ? (
+            dogs.map((d, i) => (
               <TouchableOpacity
-                style={styles.compDetailRow}
-                onPress={() => Linking.openURL(`tel:${client.phone.replace(/[^0-9+]/g, '')}`)}
+                key={d.id}
+                style={[s.dogRow, i < dogs.length - 1 && s.dogRowBorder]}
+                onPress={() => onOpenDog(d.id)}
                 activeOpacity={0.75}
               >
-                <Text style={styles.compDetailLabel}>Phone</Text>
-                <Text style={[styles.compDetailValue, { color: colors.greenText }]}>{client.phone}</Text>
+                <View style={s.dogAvatar}>
+                  <Text style={{ fontSize: 18 }}>{d.emoji}</Text>
+                </View>
+                <View style={{ flex: 1, minWidth: 0 }}>
+                  <Text style={s.dogName} numberOfLines={1}>
+                    {d.name}
+                  </Text>
+                  <Text style={s.dogBreed} numberOfLines={1}>
+                    {d.breed || "Breed not provided"}
+                  </Text>
+                </View>
               </TouchableOpacity>
-            ) : (
-              <View style={styles.compDetailRow}>
-                <Text style={styles.compDetailLabel}>Phone</Text>
-                <Text style={styles.compDetailValue}>—</Text>
-              </View>
-            )}
-            <View style={[styles.compDetailRow, { borderBottomWidth: 0, paddingBottom: 2 }]}>
-              <Text style={styles.compDetailLabel}>Address</Text>
-              <Text style={[styles.compDetailValue, { lineHeight: 20 }]}>{client.address.trim() || '—'}</Text>
-            </View>
-          </View>
-
-          {dogs.length > 0 && (
-            <View style={styles.compCard}>
-              <Text style={styles.compCardTitle}>Dogs in this walk</Text>
-              <View style={styles.compDogList}>
-                {dogs.map((dogItem) => {
-                  const meta = [
-                    dogItem.breed || 'Breed not provided',
-                    dogItem.age > 0 ? `${dogItem.age}y` : null,
-                    dogItem.weight > 0 ? `${dogItem.weight}kg` : null,
-                  ]
-                    .filter(Boolean)
-                    .join(' · ');
-                  return (
-                    <View key={dogItem.id} style={styles.compDogRow}>
-                      <View style={styles.compDogEmojiCircle}>
-                        <Text style={{ fontSize: 20 }}>{dogItem.emoji}</Text>
-                      </View>
-                      <View style={{ flex: 1, minWidth: 0 }}>
-                        <Text style={styles.compDogRowName} numberOfLines={1}>{dogItem.name}</Text>
-                        <Text style={styles.compDogRowMeta} numberOfLines={2}>{meta}</Text>
-                      </View>
-                    </View>
-                  );
-                })}
-              </View>
+            ))
+          ) : (
+            <View style={s.notesContent}>
+              <Text style={s.rvEmpty}>—</Text>
             </View>
           )}
+        </Card>
 
-          <View style={styles.compCard}>
-            <Text style={styles.compCardTitle}>Total price</Text>
-            <Text style={styles.compRateLine}>
-              ${billingTotal.toFixed(2)} <Text style={styles.compRateHint}>total</Text>
+        <Card title="Notes">
+          <View style={s.notesContent}>
+            <Text style={[s.notesText, notesText.trim().length === 0 && s.notesTextEmpty]}>
+              {notesDisplay}
+            </Text>
+          </View>
+        </Card>
+
+        <Card title="Total price" last>
+          <View style={s.priceBlock}>
+            <Text style={s.priceAmount}>
+              ${billingTotal.toFixed(2)} <Text style={s.priceAmountSub}>total</Text>
             </Text>
             {billingUsesPerDog
               ? dogs.map((d) => (
-                  <Text key={d.id} style={styles.compRateSub}>
+                  <Text key={d.id} style={s.priceBreakdown}>
                     {d.name}: ${(walkPerDogMap?.[d.id] ?? client.pricePerWalk).toFixed(2)}
                   </Text>
                 ))
               : (
-                  <Text style={styles.compRateSub}>
-                    ${effectivePricePerWalk(walk, client).toFixed(2)} × {billingDogCount} dog
-                    {billingDogCount === 1 ? '' : 's'}
-                  </Text>
-                )}
+                <Text style={s.priceBreakdown}>
+                  ${effectivePricePerWalk(walk, client).toFixed(2)} × {billingDogCount} dog
+                  {billingDogCount === 1 ? "" : "s"}
+                </Text>
+              )}
           </View>
-
-          {notesText.length > 0 && (
-            <View style={styles.notesCard}>
-              <Text style={styles.notesLabel}>WALKER NOTES</Text>
-              <Text style={styles.notesText}>{notesText}</Text>
-            </View>
-          )}
-        </ScrollView>
-      </View>
-    </LinearGradient>
+        </Card>
+      </ScrollView>
+    </View>
   );
 }
 
-const styles = StyleSheet.create({
-  scroll: { paddingHorizontal: 20, paddingTop: 12 },
-  timerBlock: { alignItems: 'center', paddingVertical: 28 },
-  timerBlockTop: {
-    paddingVertical: 14,
-    marginBottom: 4,
-  },
-  actionsRowTop: {
-    marginBottom: 12,
-    marginTop: 0,
-  },
-  primaryWalkAction: {
-    marginBottom: 14,
-    marginTop: 0,
+const s = StyleSheet.create({
+  safe: { flex: 1, backgroundColor: colors.bg },
+  scroll: { paddingTop: 10 },
+
+  timerSection: {
+    paddingHorizontal: 24,
+    paddingTop: 6,
+    paddingBottom: 16,
+    alignItems: "center",
   },
   timer: {
-    fontSize: 52,
-    fontWeight: '300',
-    color: 'white',
-    letterSpacing: 2,
+    fontSize: 58,
+    fontWeight: "300",
+    color: colors.text,
+    letterSpacing: -3,
+    fontVariant: ["tabular-nums"],
   },
-  timerSub: {
-    fontSize: 13,
-    color: 'rgba(255,255,255,0.7)',
-    marginTop: 4,
+  timerSub: { fontSize: 12, color: colors.textMuted, marginTop: 5 },
+  progressWrap: {
+    marginTop: 12,
+    height: 3,
+    width: "100%",
+    maxWidth: 260,
+    backgroundColor: colors.surface,
+    borderRadius: 999,
+    overflow: "hidden",
   },
-  actionsRow: { flexDirection: 'row', gap: 12 },
+  progressBar: { height: 3, borderRadius: 999 },
+
+  actions: { flexDirection: "row", gap: 8, paddingHorizontal: 16, paddingBottom: 12 },
   actionBtn: {
     flex: 1,
-    backgroundColor: 'rgba(255,255,255,0.15)',
-    borderRadius: 10,
+    backgroundColor: colors.surface,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: colors.border,
+    borderRadius: 16,
     paddingVertical: 14,
-    alignItems: 'center',
-    gap: 6,
+    alignItems: "center",
+    gap: 7,
   },
-  actionLabel: { fontSize: 13, fontWeight: '600', color: 'white' },
-  notesCard: {
-    backgroundColor: 'rgba(255,255,255,0.12)',
-    borderRadius: 12,
-    padding: 14,
-    marginBottom: 24,
-  },
-  notesLabel: {
-    fontSize: 11,
-    fontWeight: '600',
-    color: 'rgba(255,255,255,0.7)',
-    letterSpacing: 0.6,
-    textTransform: 'uppercase',
-    marginBottom: 8,
-  },
-  notesText: {
-    fontSize: 13,
-    color: 'rgba(255,255,255,0.9)',
-    lineHeight: 20,
-  },
-  finishBtn: {
-    backgroundColor: 'white',
-    borderRadius: 10,
-    paddingVertical: 18,
-    alignItems: 'center',
-  },
-  finishBtnText: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: colors.greenDeep,
-  },
-  lateNotice: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    gap: 10,
-    backgroundColor: 'rgba(245, 158, 11, 0.12)',
-    borderWidth: 1,
-    borderColor: 'rgba(245, 158, 11, 0.35)',
-    borderRadius: 12,
-    padding: 12,
-    marginBottom: 8,
-  },
-  lateNoticeTitle: {
-    fontSize: 14,
-    fontWeight: '700',
-    color: colors.amberText,
-    marginBottom: 4,
-  },
-  lateNoticeSub: {
-    fontSize: 12,
-    color: 'rgba(255,255,255,0.85)',
-    lineHeight: 17,
-  },
-  startWalkBtn: {
-    flexDirection: 'row',
-    backgroundColor: 'white',
-    borderRadius: 10,
-    paddingVertical: 18,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  startWalkBtnText: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: colors.greenDeep,
-  },
-  compCard: {
-    backgroundColor: 'rgba(255,255,255,0.1)',
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.12)',
-    padding: 16,
-    marginBottom: 12,
-  },
-  compCardTitle: {
-    fontSize: 11,
-    fontWeight: '700',
-    color: 'rgba(255,255,255,0.55)',
-    letterSpacing: 1,
-    textTransform: 'uppercase',
-    marginBottom: 12,
-  },
-  compDetailRow: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    justifyContent: 'space-between',
-    gap: 12,
-    paddingVertical: 10,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: 'rgba(255,255,255,0.12)',
-  },
-  compDetailLabel: {
-    fontSize: 13,
-    color: 'rgba(255,255,255,0.55)',
-    fontWeight: '500',
-    minWidth: 88,
-  },
-  compDetailValue: {
-    flex: 1,
-    fontSize: 14,
-    color: 'rgba(255,255,255,0.95)',
-    fontWeight: '600',
-    textAlign: 'right',
-    lineHeight: 20,
-  },
-  compRateLine: { fontSize: 18, fontWeight: '700', color: 'white' },
-  compRateHint: { fontSize: 13, fontWeight: '500', color: 'rgba(255,255,255,0.45)' },
-  compRateSub: {
+  actionTxt: { fontSize: 12, color: colors.textSecondary, fontWeight: "500" },
+
+  primaryBtn: {
+    marginHorizontal: 16,
     marginTop: 4,
-    fontSize: 12,
-    color: 'rgba(255,255,255,0.65)',
-    fontWeight: '500',
+    marginBottom: 34,
+    backgroundColor: colors.greenDeep,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: colors.greenBorder,
+    borderRadius: 16,
+    paddingVertical: 16,
+    alignItems: "center",
   },
-  compDogList: { gap: 10 },
-  compDogRow: {
-    flexDirection: 'row',
-    gap: 10,
-    backgroundColor: 'rgba(0,0,0,0.12)',
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.08)',
-    padding: 10,
+  primaryBtnText: { fontSize: 15, fontWeight: "600", color: colors.greenText },
+
+  card: {
+    marginHorizontal: 16,
+    marginBottom: 12,
+    backgroundColor: colors.surface,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: colors.border,
+    borderRadius: 16,
+    overflow: "hidden",
   },
-  compDogEmojiCircle: {
-    width: 38,
-    height: 38,
+  cardLast: { marginBottom: 0 },
+  cardHead: {
+    paddingHorizontal: 14,
+    paddingTop: 12,
+    paddingBottom: 10,
+    backgroundColor: colors.surfaceHigh,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: colors.border,
+  },
+  cardHeadText: {
+    fontSize: 10,
+    fontWeight: "700",
+    letterSpacing: 1.1,
+    textTransform: "uppercase",
+    color: colors.textMuted,
+  },
+
+  row: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingHorizontal: 14,
+    paddingVertical: 11,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: "rgba(255,255,255,0.05)",
+    gap: 12,
+  },
+  rowLast: { borderBottomWidth: 0 },
+  rl: { fontSize: 13, color: colors.textMuted },
+  rv: { fontSize: 13, color: colors.text, fontWeight: "600", flexShrink: 1, textAlign: "right" },
+  rvEmpty: { color: "#3e3e38", fontWeight: "400" },
+
+  dogRow: { flexDirection: "row", alignItems: "center", gap: 12, paddingHorizontal: 14, paddingVertical: 12 },
+  dogRowBorder: { borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: "rgba(255,255,255,0.05)" },
+  dogAvatar: {
+    width: 36,
+    height: 36,
     borderRadius: 10,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: 'rgba(255,255,255,0.08)',
+    backgroundColor: colors.surfaceHigh,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: colors.border,
+    alignItems: "center",
+    justifyContent: "center",
+    flexShrink: 0,
   },
-  compDogRowName: { fontSize: 14, fontWeight: '700', color: 'white' },
-  compDogRowMeta: { marginTop: 2, fontSize: 12, color: 'rgba(255,255,255,0.72)' },
+  dogName: { fontSize: 14, color: colors.text, fontWeight: "600" },
+  dogBreed: { fontSize: 12, color: colors.textMuted, marginTop: 1 },
+
+  notesContent: { paddingHorizontal: 14, paddingVertical: 12 },
+  notesText: { fontSize: 14, color: colors.textSecondary, lineHeight: 20 },
+  notesTextEmpty: { color: colors.textMuted, fontStyle: "italic" },
+
+  priceBlock: { paddingHorizontal: 14, paddingVertical: 12 },
+  priceAmount: { fontSize: 22, fontWeight: "700", color: colors.greenText, letterSpacing: -0.5 },
+  priceAmountSub: { fontSize: 13, color: colors.textMuted, fontWeight: "400" },
+  priceBreakdown: { fontSize: 12, color: colors.textMuted, marginTop: 3 },
+
+  lateNotice: {
+    marginHorizontal: 16,
+    marginBottom: 12,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    backgroundColor: "rgba(240,160,48,0.10)",
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: "rgba(240,160,48,0.22)",
+    borderRadius: 16,
+    flexDirection: "row",
+    alignItems: "flex-start",
+    gap: 10,
+  },
+  lateNoticeText: { flex: 1, fontSize: 12, color: colors.textSecondary, lineHeight: 16 },
 });

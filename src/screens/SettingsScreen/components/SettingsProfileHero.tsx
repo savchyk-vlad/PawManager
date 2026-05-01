@@ -51,6 +51,19 @@ export function SettingsProfileHero({
               }}
             />
           </View>
+          <View style={st.heroTitleCol}>
+            <Text style={[st.profileName, { fontFamily: "DMSans_700Bold" }]} numberOfLines={1}>
+              {fullName}
+            </Text>
+            <Text style={[st.profileEmail, { fontFamily: "DMSans_400Regular" }]} numberOfLines={1}>
+              {email}
+            </Text>
+            {savingFullName ? (
+              <Text style={[st.heroSaving, { fontFamily: "DMSans_400Regular" }]}>
+                Saving…
+              </Text>
+            ) : null}
+          </View>
           <TouchableOpacity
             style={st.editProfileBtn}
             onPress={onOpenNameModal}
@@ -67,18 +80,6 @@ export function SettingsProfileHero({
       </View>
 
       <View style={st.profileHeroBody}>
-        <Text style={[st.profileName, { fontFamily: "DMSans_700Bold" }]}>
-          {fullName}
-        </Text>
-        <Text style={[st.profileEmail, { fontFamily: "DMSans_400Regular" }]}>
-          {email}
-        </Text>
-        {savingFullName ? (
-          <Text style={[st.heroSaving, { fontFamily: "DMSans_400Regular" }]}>
-            Saving…
-          </Text>
-        ) : null}
-
         <View style={st.profileStatsRow}>
           <View style={st.profileStatItem}>
             <Text

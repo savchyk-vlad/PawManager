@@ -10,6 +10,7 @@ interface DbClient {
   address: string;
   phone: string;
   price_per_walk: number;
+  key_location: string;
   dogs: DbDog[];
 }
 
@@ -24,7 +25,6 @@ interface DbDog {
   vet: string;
   vet_phone: string;
   medical: string;
-  key_location: string;
   is_deleted: boolean;
   dog_traits: { label: string; type: DogTraitType }[];
 }
@@ -43,7 +43,6 @@ function mapDog(row: DbDog): Dog {
     vet: row.vet,
     vetPhone: row.vet_phone,
     medical: row.medical,
-    keyLocation: row.key_location,
     isDeleted: row.is_deleted ?? false,
     traits: row.dog_traits ?? [],
   };
@@ -56,6 +55,7 @@ function mapClient(row: DbClient): Client {
     address: row.address,
     phone: row.phone,
     pricePerWalk: Number(row.price_per_walk),
+    keyLocation: row.key_location ?? '',
     dogs: (row.dogs ?? []).map(mapDog),
   };
 }
@@ -88,10 +88,10 @@ export async function fetchClients(userId: string): Promise<Client[]> {
   const { data, error } = await supabase
     .from('clients')
     .select(`
-      id, user_id, name, address, phone, price_per_walk,
+      id, user_id, name, address, phone, price_per_walk, key_location,
       dogs (
         id, client_id, name, breed, age, weight, emoji, is_deleted,
-        vet, vet_phone, medical, key_location,
+        vet, vet_phone, medical,
         dog_traits ( label, type )
       )
     `)
@@ -115,6 +115,7 @@ export async function createClient(
       address: client.address,
       phone: client.phone,
       price_per_walk: client.pricePerWalk,
+      key_location: client.keyLocation ?? '',
     })
     .select('id')
     .single();
@@ -136,7 +137,6 @@ export async function createClient(
         vet: dog.vet,
         vet_phone: dog.vetPhone,
         medical: dog.medical,
-        key_location: dog.keyLocation,
       })
       .select('id')
       .single();
@@ -160,7 +160,7 @@ export async function deleteClient(clientId: string): Promise<void> {
 
 export async function updateClientFields(
   clientId: string,
-  fields: { name: string; address: string; phone: string; pricePerWalk: number },
+  fields: { name: string; address: string; phone: string; pricePerWalk: number; keyLocation: string },
 ): Promise<void> {
   const { error } = await supabase
     .from('clients')
@@ -169,6 +169,7 @@ export async function updateClientFields(
       address: fields.address,
       phone: fields.phone,
       price_per_walk: fields.pricePerWalk,
+      key_location: fields.keyLocation ?? '',
     })
     .eq('id', clientId);
   if (error) throw new Error(error.message);
@@ -199,7 +200,6 @@ export type DogProfilePayload = {
   vet: string;
   vetPhone: string;
   medical: string;
-  keyLocation: string;
 };
 
 /** Full dog row update (wizard / dedicated dog editor). */
@@ -215,7 +215,6 @@ export async function updateDogProfile(dogId: string, fields: DogProfilePayload)
       vet: fields.vet,
       vet_phone: fields.vetPhone,
       medical: fields.medical,
-      key_location: fields.keyLocation,
     })
     .eq('id', dogId);
   if (error) throw new Error(error.message);
@@ -244,7 +243,6 @@ export async function addDog(clientId: string, dog: Omit<Dog, 'id'>): Promise<Do
       vet: dog.vet,
       vet_phone: dog.vetPhone,
       medical: dog.medical,
-      key_location: dog.keyLocation,
     })
     .select('id')
     .single();

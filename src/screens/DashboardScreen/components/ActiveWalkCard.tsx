@@ -29,6 +29,13 @@ function formatElapsed(seconds: number) {
 
 type Props = { walk: Walk };
 
+function badgeBorderColor(progressPct: number) {
+  if (!Number.isFinite(progressPct)) return colors.greenDefault;
+  if (progressPct > 100) return colors.redDefault;
+  if (progressPct >= 80) return colors.amberDefault;
+  return colors.greenDefault;
+}
+
 export function ActiveWalkCard({ walk }: Props) {
   const navigation = useNavigation<Nav>();
   const { clients } = useAppStore();
@@ -56,13 +63,17 @@ export function ActiveWalkCard({ walk }: Props) {
     : [];
   const dogNames = dogs.map((d) => d.name).join(" & ") || "Walk";
 
+  const plannedSeconds = Math.max(1, walk.durationMinutes) * 60;
+  const progressPct = Math.min((elapsed / plannedSeconds) * 100, 999);
+  const badgeBorder = badgeBorderColor(progressPct);
+
   return (
     <TouchableOpacity
       activeOpacity={0.9}
       style={styles.card}
       onPress={() => navigation.navigate("ActiveWalk", { walkId: walk.id })}>
       <View style={styles.top}>
-        <View style={styles.badge}>
+        <View style={[styles.badge, { borderColor: badgeBorder }]}>
           <Text style={styles.badgeText}>ACTIVE WALK</Text>
         </View>
         <Text style={styles.timer}>{formatElapsed(elapsed)}</Text>
@@ -102,6 +113,8 @@ const styles = StyleSheet.create({
     borderRadius: 999,
     paddingHorizontal: 10,
     paddingVertical: 6,
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.30)",
   },
   badgeText: {
     fontSize: 11,

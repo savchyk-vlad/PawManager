@@ -4,6 +4,7 @@ import { format, parseISO } from "date-fns";
 import { Client, Walk } from "../../../types";
 import { walkDogCount } from "../../../lib/walkMetrics";
 import { colors, radius } from "../../../theme";
+import { Ionicons } from "@expo/vector-icons";
 
 export type UnpaidEntry = {
   client: Client;
@@ -13,7 +14,7 @@ export type UnpaidEntry = {
 
 type Props = {
   unpaidByClient: UnpaidEntry[];
-  expandedClientIds: Set<string>;
+  expandedClientId: string | null;
   currency: (amount: number) => string;
   dogNamesForWalk: (walk: Walk, client: Client) => string;
   onToggleClient: (clientId: string) => void;
@@ -24,7 +25,7 @@ type Props = {
 
 export function UnpaidClientsSection({
   unpaidByClient,
-  expandedClientIds,
+  expandedClientId,
   currency,
   dogNamesForWalk,
   onToggleClient,
@@ -47,15 +48,18 @@ export function UnpaidClientsSection({
                 {entry.unpaidWalks.reduce((sum, walk) => sum + walkDogCount(walk), 0) === 1 ? "" : "s"}
               </Text>
             </View>
-            <Text style={styles.clientAmount}>{currency(entry.total)}</Text>
-            <View style={styles.chevronWrap}>
-              <Text style={styles.chevronText}>
-                {expandedClientIds.has(entry.client.id) ? "▲" : "▼"}
-              </Text>
+            <View style={styles.amountCol}>
+              <Text style={styles.clientAmount}>{currency(entry.total)}</Text>
+              <Ionicons
+                name={expandedClientId === entry.client.id ? "chevron-up" : "chevron-down"}
+                size={16}
+                color={colors.textMuted}
+                style={{ marginTop: 4 }}
+              />
             </View>
           </TouchableOpacity>
 
-          {expandedClientIds.has(entry.client.id) && (
+          {expandedClientId === entry.client.id && (
             <>
               <View style={styles.clientActions}>
                 <TouchableOpacity
@@ -110,7 +114,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.surface,
     borderWidth: 1,
     borderColor: colors.border,
-    borderRadius: radius.sm,
+    borderRadius: radius.md,
     overflow: "hidden",
   },
   clientHeader: {
@@ -120,6 +124,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     paddingTop: 14,
     paddingBottom: 12,
+    backgroundColor: colors.surfaceHigh,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: "rgba(255,255,255,0.05)",
   },
   clientName: {
     fontSize: 16,
@@ -137,24 +144,13 @@ const styles = StyleSheet.create({
     letterSpacing: -0.4,
     color: colors.text,
   },
-  chevronWrap: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: "rgba(255,255,255,0.08)",
-  },
-  chevronText: {
-    fontSize: 10,
-    color: colors.textSecondary,
-    fontWeight: "700",
-  },
+  amountCol: { alignItems: "flex-end", flexShrink: 0, paddingLeft: 8 },
   clientActions: {
     flexDirection: "row",
     gap: 8,
     paddingHorizontal: 14,
     paddingBottom: 12,
+    paddingTop: 12,
   },
   markPaidBtn: {
     flex: 1,
@@ -162,7 +158,9 @@ const styles = StyleSheet.create({
     backgroundColor: colors.greenDeep,
     paddingHorizontal: 12,
     paddingVertical: 9,
-    borderRadius: radius.sm,
+    borderRadius: radius.md,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: colors.greenBorder,
   },
   markPaidText: {
     color: colors.text,
@@ -171,7 +169,7 @@ const styles = StyleSheet.create({
   },
   walkList: {
     borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: colors.border,
+    borderTopColor: "rgba(255,255,255,0.05)",
   },
   walkRow: {
     paddingHorizontal: 14,
@@ -182,7 +180,7 @@ const styles = StyleSheet.create({
   },
   walkRowBorder: {
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: colors.border,
+    borderBottomColor: "rgba(255,255,255,0.05)",
   },
   walkDog: {
     fontSize: 13,

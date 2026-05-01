@@ -1,13 +1,5 @@
-import React from 'react';
-import {
-  Linking,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
-} from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
+import React, { useMemo } from 'react';
+import { Linking, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Client, Dog, Walk } from '../../../types';
 import { colors } from '../../../theme';
@@ -21,6 +13,7 @@ type Props = {
   topInset: number;
   bottomInset: number;
   onBack: () => void;
+  onOpenDog?: (dogId: string) => void;
 };
 
 export function CompletedWalkView({
@@ -30,6 +23,7 @@ export function CompletedWalkView({
   topInset,
   bottomInset,
   onBack,
+  onOpenDog,
 }: Props) {
   const dogCount = Math.max(1, walk.dogIds.length);
   const pay = paymentLabelAndColors(walk.paymentStatus);
@@ -38,312 +32,251 @@ export function CompletedWalkView({
   const perDogMap = walk.perDogPrices;
   const hasPerDogRates = perDogMap != null && Object.keys(perDogMap).length > 0;
   const rateBase = clientRow?.pricePerWalk ?? 0;
-  const durationLine =
-    actual !== walk.durationMinutes
-      ? `${actual} min actual . ${walk.durationMinutes} min booked`
-      : `${actual} min`;
+  const durationLine = actual !== walk.durationMinutes ? `${actual} min · booked ${walk.durationMinutes} min` : `${actual} min`;
+
+  const dogNames = useMemo(() => dogsRow.map((d) => d.name).join(' & '), [dogsRow]);
+
+  const notesDisplay = useMemo(() => {
+    const trimmed = (walk.notes ?? '').trim();
+    if (trimmed.length === 0) return 'No notes added…';
+    // Some older walks may have duplicated auto-notes (e.g. client notes) saved twice.
+    // Collapse exact duplicate lines to keep the details clean.
+    const lines = trimmed
+      .split(/\r?\n/)
+      .map((l) => l.trim())
+      .filter(Boolean);
+    const deduped: string[] = [];
+    for (const line of lines) {
+      if (deduped.includes(line)) continue;
+      deduped.push(line);
+    }
+    return deduped.join('\n');
+  }, [walk.notes]);
+
+  const Card = ({ title, children, last }: { title: string; children: React.ReactNode; last?: boolean }) => (
+    <View style={[styles.card, last && styles.cardLast]}>
+      <View style={styles.cardHead}>
+        <Text style={styles.cardHeadText}>{title}</Text>
+      </View>
+      {children}
+    </View>
+  );
+
+  const Row = ({
+    label,
+    value,
+    empty,
+    last,
+    valueColor,
+  }: {
+    label: string;
+    value: string;
+    empty?: boolean;
+    last?: boolean;
+    valueColor?: string;
+  }) => (
+    <View style={[styles.row, last && styles.rowLast]}>
+      <Text style={styles.rl}>{label}</Text>
+      <Text style={[styles.rv, empty && styles.rvEmpty, valueColor && { color: valueColor }]} numberOfLines={2}>
+        {value}
+      </Text>
+    </View>
+  );
 
   return (
-    <LinearGradient
-      colors={[colors.bg, colors.greenDeep, colors.greenDefault]}
-      locations={[0, 0.45, 1]}
-      start={{ x: 0.1, y: 0 }}
-      end={{ x: 0.9, y: 1 }}
-      style={{ flex: 1 }}
-    >
-      <View style={{ paddingTop: topInset, flex: 1 }}>
-        <ScrollView
-          contentContainerStyle={[
-            styles.compScroll,
-            { paddingBottom: bottomInset + 28 },
-          ]}
-          showsVerticalScrollIndicator={false}
-        >
-          <View style={styles.compTopBar}>
-            <TouchableOpacity style={styles.backBtn} onPress={onBack}>
-              <Ionicons name="arrow-back" size={16} color="white" />
-              <Text style={styles.backText}>Back</Text>
-            </TouchableOpacity>
-            <View style={styles.compStatusPill}>
-              <Ionicons name="checkmark-circle" size={14} color={colors.greenText} />
-              <Text style={styles.compStatusPillText}>COMPLETED</Text>
-            </View>
-            <View style={{ width: 88 }} />
-          </View>
+    <View style={[styles.safe, { paddingTop: topInset }]}>
+      <ScrollView
+        contentContainerStyle={[styles.scroll, { paddingBottom: bottomInset + 24 }]}
+        showsVerticalScrollIndicator={false}
+      >
+        <View style={styles.topBar}>
+          <TouchableOpacity style={styles.backBtn} onPress={onBack} activeOpacity={0.85}>
+            <Ionicons name="arrow-back" size={16} color={colors.textSecondary} />
+            <Text style={styles.backText}>Back</Text>
+          </TouchableOpacity>
+          <Text style={styles.screenLabel}>COMPLETED</Text>
+          <View style={styles.headerSpacer} />
+        </View>
 
-          <View style={styles.compCard}>
-            <Text style={styles.compCardTitle}>Visit summary</Text>
-            <View style={styles.compDetailRow}>
-              <Text style={styles.compDetailLabel}>Scheduled</Text>
-              <Text style={styles.compDetailValue}>{formatWhen(walk.scheduledAt)}</Text>
-            </View>
-            {walk.startedAt && (
-              <View style={styles.compDetailRow}>
-                <Text style={styles.compDetailLabel}>Started</Text>
-                <Text style={styles.compDetailValue}>{formatWhen(walk.startedAt)}</Text>
-              </View>
-            )}
-            {walk.finishedAt && (
-              <View style={styles.compDetailRow}>
-                <Text style={styles.compDetailLabel}>Finished</Text>
-                <Text style={styles.compDetailValue}>{formatWhen(walk.finishedAt)}</Text>
-              </View>
-            )}
-            <View style={[styles.compDetailRow, { borderBottomWidth: 0, paddingBottom: 2 }]}>
-              <Text style={styles.compDetailLabel}>Duration</Text>
-              <Text style={styles.compDetailValue}>{durationLine}</Text>
-            </View>
-          </View>
+        <Card title="Schedule">
+          <Row label="Scheduled" value={formatWhen(walk.scheduledAt)} />
+          {walk.startedAt ? <Row label="Started" value={formatWhen(walk.startedAt)} /> : null}
+          {walk.finishedAt ? <Row label="Finished" value={formatWhen(walk.finishedAt)} /> : null}
+          <Row label="Duration" value={durationLine} last />
+        </Card>
 
-          {clientRow != null && (
-            <View style={styles.compCard}>
-              <Text style={styles.compCardTitle}>Client information</Text>
-              <View style={styles.compDetailRow}>
-                <Text style={styles.compDetailLabel}>Name</Text>
-                <Text style={styles.compDetailValue}>{clientRow.name}</Text>
-              </View>
-              {clientRow.phone.trim() ? (
-                <TouchableOpacity
-                  style={styles.compDetailRow}
-                  onPress={() =>
-                    Linking.openURL(`tel:${clientRow.phone.replace(/[^0-9+]/g, '')}`)
-                  }
-                  activeOpacity={0.75}
-                >
-                  <Text style={styles.compDetailLabel}>Phone</Text>
-                  <Text style={[styles.compDetailValue, { color: colors.greenText }]}>
-                    {clientRow.phone}
-                  </Text>
-                </TouchableOpacity>
-              ) : (
-                <View style={styles.compDetailRow}>
-                  <Text style={styles.compDetailLabel}>Phone</Text>
-                  <Text style={styles.compDetailValue}>—</Text>
+        {clientRow ? (
+          <Card title="Client information">
+            <Row label="Name" value={clientRow.name} />
+            <Row label="Phone" value={clientRow.phone.trim() || '—'} empty={!clientRow.phone.trim()} />
+            <Row label="Address" value={clientRow.address.trim() || '—'} empty={!clientRow.address.trim()} last />
+          </Card>
+        ) : null}
+
+        <Card title="Dogs in this walk">
+          {dogsRow.length > 0 ? (
+            dogsRow.map((d, i) => (
+              <TouchableOpacity
+                key={d.id}
+                style={[styles.dogRow, i < dogsRow.length - 1 && styles.dogRowBorder]}
+                onPress={() => onOpenDog?.(d.id)}
+                activeOpacity={onOpenDog ? 0.75 : 1}
+                disabled={!onOpenDog}
+              >
+                <View style={styles.dogAvatar}>
+                  <Text style={{ fontSize: 18 }}>{d.emoji}</Text>
                 </View>
-              )}
-              <View style={[styles.compDetailRow, { borderBottomWidth: 0, paddingBottom: 2 }]}>
-                <Text style={styles.compDetailLabel}>Address</Text>
-                <Text style={[styles.compDetailValue, { lineHeight: 20 }]}>
-                  {clientRow.address.trim() || '—'}
-                </Text>
-              </View>
+                <View style={{ flex: 1, minWidth: 0 }}>
+                  <Text style={styles.dogName} numberOfLines={1}>{d.name}</Text>
+                  <Text style={styles.dogBreed} numberOfLines={1}>{d.breed || 'Breed not provided'}</Text>
+                </View>
+              </TouchableOpacity>
+            ))
+          ) : (
+            <View style={styles.notesContent}>
+              <Text style={styles.rvEmpty}>—</Text>
             </View>
           )}
+        </Card>
 
-          <View style={styles.compCard}>
-            <Text style={styles.compCardTitle}>Total price</Text>
-            <View style={styles.compPayRow}>
-              <View>
-                {clientRow != null && (
-                  <Text style={styles.compRateLine}>
-                    ${walkTotal.toFixed(2)} <Text style={styles.compRateHint}>total</Text>
-                  </Text>
-                )}
-                {clientRow != null &&
-                  (hasPerDogRates ? (
-                    dogsRow.map((d) => {
-                      const amt = perDogMap![d.id] ?? rateBase;
-                      return (
-                        <Text key={d.id} style={styles.compRateSub}>
-                          {d.name}: ${amt.toFixed(2)}
-                        </Text>
-                      );
-                    })
-                  ) : (
-                    <Text style={styles.compRateSub}>
-                      ${effectivePricePerWalk(walk, clientRow).toFixed(2)} × {dogCount} dog
-                      {dogCount === 1 ? '' : 's'}
-                    </Text>
-                  ))}
-              </View>
-              <View style={[styles.compPayBadge, { backgroundColor: pay.bg }]}>
-                <Text style={[styles.compPayBadgeText, { color: pay.fg }]}>{pay.label}</Text>
-              </View>
-            </View>
+        <Card title="Notes">
+          <View style={styles.notesContent}>
+            <Text style={[styles.notesText, (walk.notes ?? '').trim().length === 0 && styles.notesTextEmpty]}>
+              {notesDisplay}
+            </Text>
           </View>
+        </Card>
 
-          {dogsRow.length > 0 && (
-            <View style={styles.compCard}>
-              <Text style={styles.compCardTitle}>Dogs in this walk</Text>
-              <View style={styles.compDogList}>
-                {dogsRow.map((dog) => {
-                  const traitsText = dog.traits.map((t) => t.label).join(' • ');
-                  const details = [
-                    dog.breed || 'Breed not provided',
-                    dog.age > 0 ? `${dog.age}y` : null,
-                    dog.weight > 0 ? `${dog.weight}kg` : null,
-                  ]
-                    .filter(Boolean)
-                    .join(' • ');
-                  return (
-                    <View key={dog.id} style={styles.compDogRow}>
-                      <View style={styles.compDogEmojiCircle}>
-                        <Text style={{ fontSize: 20 }}>{dog.emoji}</Text>
-                      </View>
-                      <View style={{ flex: 1, minWidth: 0 }}>
-                        <Text style={styles.compDogRowName} numberOfLines={1}>
-                          {dog.name}
-                        </Text>
-                        <Text style={styles.compDogRowMeta} numberOfLines={2}>
-                          {details}
-                        </Text>
-                        {traitsText.length > 0 && (
-                          <Text style={styles.compDogRowTraits} numberOfLines={2}>
-                            {traitsText}
-                          </Text>
-                        )}
-                        {!!dog.medical?.trim() && (
-                          <Text style={styles.compDogRowNote} numberOfLines={2}>
-                            Medical: {dog.medical.trim()}
-                          </Text>
-                        )}
-                      </View>
-                    </View>
-                  );
-                })}
+        <Card title="Total price" last>
+          <View style={styles.priceBlock}>
+            <View style={styles.priceTopRow}>
+              <Text style={styles.priceAmount}>
+                ${walkTotal.toFixed(2)} <Text style={styles.priceAmountSub}>total</Text>
+              </Text>
+              <View style={[styles.payBadge, { backgroundColor: pay.bg }]}>
+                <Text style={[styles.payBadgeText, { color: pay.fg }]}>{pay.label}</Text>
               </View>
             </View>
-          )}
-
-          {!!walk.notes?.trim() && (
-            <View style={styles.compNotesCard}>
-              <Text style={styles.compNotesLabel}>WALK NOTE</Text>
-              <Text style={styles.compNotesBody}>{walk.notes.trim()}</Text>
-            </View>
-          )}
-        </ScrollView>
-      </View>
-    </LinearGradient>
+            {clientRow &&
+              (hasPerDogRates
+                ? dogsRow.map((d) => {
+                    const amt = perDogMap![d.id] ?? rateBase;
+                    return (
+                      <Text key={d.id} style={styles.priceBreakdown}>
+                        {d.name}: ${amt.toFixed(2)}
+                      </Text>
+                    );
+                  })
+                : (
+                  <Text style={styles.priceBreakdown}>
+                    ${effectivePricePerWalk(walk, clientRow).toFixed(2)} × {dogCount} dog{dogCount === 1 ? '' : 's'}
+                    {dogNames ? ` (${dogNames})` : ''}
+                  </Text>
+                ))}
+          </View>
+        </Card>
+      </ScrollView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  compScroll: { paddingHorizontal: 20, paddingTop: 8 },
-  compTopBar: {
+  safe: { flex: 1, backgroundColor: colors.bg },
+  scroll: { paddingTop: 10, paddingBottom: 24 },
+
+  topBar: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginBottom: 8,
+    marginBottom: 16,
+    paddingHorizontal: 16,
   },
   backBtn: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
-    backgroundColor: 'rgba(255,255,255,0.15)',
-    paddingHorizontal: 14,
+    gap: 8,
+    backgroundColor: colors.surface,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: colors.border,
+    paddingHorizontal: 12,
     paddingVertical: 8,
-    borderRadius: 999,
+    borderRadius: 20,
   },
-  backText: { fontSize: 13, fontWeight: '500', color: 'white' },
-  compStatusPill: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    backgroundColor: 'rgba(255,255,255,0.12)',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 999,
-  },
-  compStatusPillText: {
+  backText: { color: colors.textSecondary, fontSize: 13, fontWeight: '600' },
+  screenLabel: {
+    color: colors.textMuted,
     fontSize: 11,
-    fontWeight: '800',
-    color: 'rgba(255,255,255,0.95)',
-    letterSpacing: 0.8,
-  },
-  compCard: {
-    backgroundColor: 'rgba(255,255,255,0.1)',
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.12)',
-    padding: 16,
-    marginBottom: 12,
-  },
-  compCardTitle: {
-    fontSize: 11,
+    letterSpacing: 1.1,
     fontWeight: '700',
-    color: 'rgba(255,255,255,0.55)',
-    letterSpacing: 1,
-    textTransform: 'uppercase',
+  },
+  headerSpacer: { width: 72 },
+
+  card: {
+    marginHorizontal: 16,
     marginBottom: 12,
+    backgroundColor: colors.surface,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: colors.border,
+    borderRadius: 16,
+    overflow: 'hidden',
   },
-  compDetailRow: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    justifyContent: 'space-between',
-    gap: 12,
-    paddingVertical: 10,
+  cardLast: { marginBottom: 0 },
+  cardHead: {
+    paddingHorizontal: 14,
+    paddingTop: 12,
+    paddingBottom: 10,
+    backgroundColor: colors.surfaceHigh,
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: 'rgba(255,255,255,0.12)',
+    borderBottomColor: colors.border,
   },
-  compDetailLabel: {
-    fontSize: 13,
-    color: 'rgba(255,255,255,0.55)',
-    fontWeight: '500',
-    minWidth: 88,
-  },
-  compDetailValue: {
-    flex: 1,
-    fontSize: 14,
-    color: 'rgba(255,255,255,0.95)',
-    fontWeight: '600',
-    textAlign: 'right',
-    lineHeight: 20,
-  },
-  compPayRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    gap: 12,
-  },
-  compRateLine: { fontSize: 18, fontWeight: '700', color: 'white' },
-  compRateHint: { fontSize: 13, fontWeight: '500', color: 'rgba(255,255,255,0.45)' },
-  compRateSub: { marginTop: 4, fontSize: 12, color: 'rgba(255,255,255,0.65)', fontWeight: '500' },
-  compPayBadge: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 999,
-  },
-  compPayBadgeText: { fontSize: 12, fontWeight: '800', letterSpacing: 0.3 },
-  compDogList: { gap: 10 },
-  compDogRow: {
-    flexDirection: 'row',
-    gap: 10,
-    backgroundColor: 'rgba(0,0,0,0.12)',
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.08)',
-    padding: 10,
-  },
-  compDogEmojiCircle: {
-    width: 38,
-    height: 38,
-    borderRadius: 10,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: 'rgba(255,255,255,0.08)',
-  },
-  compDogRowName: { fontSize: 14, fontWeight: '700', color: 'white' },
-  compDogRowMeta: { marginTop: 2, fontSize: 12, color: 'rgba(255,255,255,0.72)' },
-  compDogRowTraits: { marginTop: 4, fontSize: 12, color: 'rgba(255,255,255,0.86)' },
-  compDogRowNote: { marginTop: 4, fontSize: 12, color: 'rgba(255,255,255,0.8)' },
-  compNotesCard: {
-    backgroundColor: 'rgba(0,0,0,0.12)',
-    borderRadius: 12,
-    padding: 14,
-    marginBottom: 16,
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.08)',
-  },
-  compNotesLabel: {
+  cardHeadText: {
     fontSize: 10,
     fontWeight: '700',
-    color: 'rgba(255,255,255,0.45)',
-    letterSpacing: 0.8,
-    marginBottom: 8,
+    letterSpacing: 1.1,
+    textTransform: 'uppercase',
+    color: colors.textMuted,
   },
-  compNotesBody: {
-    fontSize: 14,
-    color: 'rgba(255,255,255,0.9)',
-    lineHeight: 21,
+
+  row: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 14,
+    paddingVertical: 11,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: 'rgba(255,255,255,0.05)',
+    gap: 12,
   },
+  rowLast: { borderBottomWidth: 0 },
+  rl: { fontSize: 13, color: colors.textMuted },
+  rv: { fontSize: 13, color: colors.text, fontWeight: '600', flexShrink: 1, textAlign: 'right' },
+  rvEmpty: { color: '#3e3e38', fontWeight: '400' },
+
+  dogRow: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 14, paddingVertical: 12 },
+  dogRowBorder: { borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: 'rgba(255,255,255,0.05)' },
+  dogAvatar: {
+    width: 36,
+    height: 36,
+    borderRadius: 10,
+    backgroundColor: colors.surfaceHigh,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: colors.border,
+    alignItems: 'center',
+    justifyContent: 'center',
+    flexShrink: 0,
+  },
+  dogName: { fontSize: 14, color: colors.text, fontWeight: '600' },
+  dogBreed: { fontSize: 12, color: colors.textMuted, marginTop: 1 },
+
+  notesContent: { paddingHorizontal: 14, paddingVertical: 12 },
+  notesText: { fontSize: 14, color: colors.textSecondary, lineHeight: 20 },
+  notesTextEmpty: { color: colors.textMuted, fontStyle: 'italic' },
+
+  priceBlock: { paddingHorizontal: 14, paddingVertical: 12 },
+  priceTopRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12 },
+  priceAmount: { fontSize: 22, fontWeight: '700', color: colors.greenText, letterSpacing: -0.5 },
+  priceAmountSub: { fontSize: 13, color: colors.textMuted, fontWeight: '400' },
+  priceBreakdown: { fontSize: 12, color: colors.textMuted, marginTop: 3 },
+  payBadge: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 999 },
+  payBadgeText: { fontSize: 11, fontWeight: '700' },
 });

@@ -11,12 +11,8 @@ type Props = {
   bizInput: string;
   defaultRate: number;
   defaultWalkDuration: WalkDuration;
-  activeDaysShort: string;
-  shiftHoursLabel: string;
   onOpenBusinessName: () => void;
   onOpenRate: () => void;
-  onOpenDays: () => void;
-  onOpenShift: () => void;
   onSelectWalkDuration: (d: WalkDuration) => void;
 };
 
@@ -28,12 +24,8 @@ export function SettingsBusinessSection({
   bizInput,
   defaultRate,
   defaultWalkDuration,
-  activeDaysShort,
-  shiftHoursLabel,
   onOpenBusinessName,
   onOpenRate,
-  onOpenDays,
-  onOpenShift,
   onSelectWalkDuration,
 }: Props) {
   return (
@@ -98,30 +90,6 @@ export function SettingsBusinessSection({
             ))}
           </View>
         </View>
-        <View style={st.hairline} />
-        <TouchableOpacity style={st.row} onPress={onOpenDays} activeOpacity={0.75}>
-          <Text style={[st.rowLabel, { fontFamily: "DMSans_500Medium" }]}>
-            Active days
-          </Text>
-          <View style={st.rowValueWrap}>
-            <Text style={[st.activeDaysText, { fontFamily: mono }]}>
-              {activeDaysShort}
-            </Text>
-            <Text style={st.rowChevron}>›</Text>
-          </View>
-        </TouchableOpacity>
-        <View style={st.hairline} />
-        <TouchableOpacity style={st.row} onPress={onOpenShift} activeOpacity={0.75}>
-          <Text style={[st.rowLabel, { fontFamily: "DMSans_500Medium" }]}>
-            Shift hours
-          </Text>
-          <View style={st.rowValueWrap}>
-            <Text style={[st.shiftSummary, { fontFamily: mono }]}>
-              {shiftHoursLabel}
-            </Text>
-            <Text style={st.rowChevron}>›</Text>
-          </View>
-        </TouchableOpacity>
       </View>
     </>
   );

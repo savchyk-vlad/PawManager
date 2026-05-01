@@ -1,38 +1,46 @@
 import { Platform } from 'react-native';
 
-export const BACKGROUND_FETCH_TASK = 'pawmanager-background-fetch';
+export const BACKGROUND_TASK_ID = 'pawmanager-background-task';
+
+/** @deprecated Use `BACKGROUND_TASK_ID` (expo-background-task). */
+export const BACKGROUND_FETCH_TASK = BACKGROUND_TASK_ID;
 
 type TaskManagerNS = typeof import('expo-task-manager');
-type BackgroundFetchNS = typeof import('expo-background-fetch');
+type BackgroundTaskNS = typeof import('expo-background-task');
 
 let taskManager: TaskManagerNS | null = null;
-let backgroundFetch: BackgroundFetchNS | null = null;
+let BackgroundTask: BackgroundTaskNS | null = null;
 
 if (Platform.OS !== 'web') {
   try {
     taskManager = require('expo-task-manager') as TaskManagerNS;
-    backgroundFetch = require('expo-background-fetch') as BackgroundFetchNS;
+    BackgroundTask = require('expo-background-task') as BackgroundTaskNS;
 
-    taskManager.defineTask(BACKGROUND_FETCH_TASK, async () => {
-      return backgroundFetch!.BackgroundFetchResult.NoData;
-    });
+    taskManager.defineTask(BACKGROUND_TASK_ID, async () =>
+      BackgroundTask!.BackgroundTaskResult.Success,
+    );
   } catch {
     taskManager = null;
-    backgroundFetch = null;
+    BackgroundTask = null;
   }
 }
 
-export async function registerBackgroundFetchAsync(): Promise<void> {
-  if (Platform.OS === 'web' || !taskManager || !backgroundFetch) return;
+export async function registerBackgroundTaskAsync(): Promise<void> {
+  if (Platform.OS === 'web' || !taskManager || !BackgroundTask) return;
   try {
-    const registered = await taskManager.isTaskRegisteredAsync(BACKGROUND_FETCH_TASK);
+    const status = await BackgroundTask.getStatusAsync();
+    if (status === BackgroundTask.BackgroundTaskStatus.Restricted) return;
+
+    const registered = await taskManager.isTaskRegisteredAsync(BACKGROUND_TASK_ID);
     if (registered) return;
-    await backgroundFetch.registerTaskAsync(BACKGROUND_FETCH_TASK, {
-      minimumInterval: 15 * 60, // 15 min (iOS may defer further)
-      stopOnTerminate: false,
-      startOnBoot: true,
+
+    await BackgroundTask.registerTaskAsync(BACKGROUND_TASK_ID, {
+      minimumInterval: 15,
     });
   } catch {
     /* unsupported or not linked */
   }
 }
+
+/** @deprecated Use `registerBackgroundTaskAsync` (expo-background-task). */
+export const registerBackgroundFetchAsync = registerBackgroundTaskAsync;

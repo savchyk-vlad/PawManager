@@ -46,7 +46,6 @@ function emptyDog(): Omit<Dog, "id"> {
     vet: "",
     vetPhone: "",
     medical: "",
-    keyLocation: "",
   };
 }
 

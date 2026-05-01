@@ -17,11 +17,6 @@ interface SettingsState {
   notificationsEnabled: boolean;
   dailySummaryEnabled: boolean;
   unpaidReminderEnabled: boolean;
-  /** Length 7, Mon–Sun */
-  workingDays: boolean[];
-  /** Stored as 24h HH:mm */
-  shiftStart: string;
-  shiftEnd: string;
 
   setBusinessName: (name: string) => void;
   setDefaultWalkDuration: (duration: WalkDuration) => void;
@@ -31,23 +26,8 @@ interface SettingsState {
   setNotificationsEnabled: (enabled: boolean) => void;
   setDailySummaryEnabled: (enabled: boolean) => void;
   setUnpaidReminderEnabled: (enabled: boolean) => void;
-  setWorkingDays: (days: boolean[]) => void;
-  setShiftStart: (t: string) => void;
-  setShiftEnd: (t: string) => void;
   resetToDefaults: () => void;
 }
-
-const DEFAULT_WORKING_DAYS: boolean[] = [
-  true,
-  true,
-  true,
-  true,
-  true,
-  false,
-  false,
-];
-
-const initialWorkingDays = (): boolean[] => [...DEFAULT_WORKING_DAYS];
 
 export const useSettingsStore = create<SettingsState>((set) => ({
   businessName: "",
@@ -58,9 +38,6 @@ export const useSettingsStore = create<SettingsState>((set) => ({
   notificationsEnabled: true,
   dailySummaryEnabled: true,
   unpaidReminderEnabled: true,
-  workingDays: initialWorkingDays(),
-  shiftStart: "08:00",
-  shiftEnd: "18:00",
 
   setBusinessName: (businessName) => set({ businessName }),
   setDefaultWalkDuration: (defaultWalkDuration) => set({ defaultWalkDuration }),
@@ -71,9 +48,6 @@ export const useSettingsStore = create<SettingsState>((set) => ({
   setDailySummaryEnabled: (dailySummaryEnabled) => set({ dailySummaryEnabled }),
   setUnpaidReminderEnabled: (unpaidReminderEnabled) =>
     set({ unpaidReminderEnabled }),
-  setWorkingDays: (workingDays) => set({ workingDays }),
-  setShiftStart: (shiftStart) => set({ shiftStart }),
-  setShiftEnd: (shiftEnd) => set({ shiftEnd }),
   resetToDefaults: () =>
     set({
       businessName: "",
@@ -84,8 +58,5 @@ export const useSettingsStore = create<SettingsState>((set) => ({
       notificationsEnabled: true,
       dailySummaryEnabled: true,
       unpaidReminderEnabled: true,
-      workingDays: initialWorkingDays(),
-      shiftStart: "08:00",
-      shiftEnd: "18:00",
     }),
 }));

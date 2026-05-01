@@ -158,6 +158,7 @@ export default function DashboardScreen() {
     todayWalks.filter((w) => w.status === "scheduled"),
     nowMs,
   );
+  const scheduledTodayCount = todayWalks.filter((w) => w.status === "scheduled").length;
   const overdueWalks = scheduledToday.filter((w) => isWalkLateToStart(w));
   const upcomingToday = scheduledToday.filter(
     (w) => !isWalkLateToStart(w) && !isScheduledWalkPastEndTime(w),
@@ -219,6 +220,7 @@ export default function DashboardScreen() {
 
         <DashboardActions
           activeTab={activeTab}
+          scheduledCount={scheduledTodayCount}
           completedCount={doneTodayWalks.length}
           onSwitchTab={switchTab}
           styles={s}
@@ -327,28 +329,40 @@ const s = StyleSheet.create({
 
   header: {
     backgroundColor: colors.greenDeep,
-    paddingHorizontal: 20,
-    paddingTop: 16,
+    paddingHorizontal: 24,
+    paddingTop: 18,
     paddingBottom: 0,
   },
 
-  statsRow: {
+  headerTopRow: {
     flexDirection: "row",
-    marginTop: 16,
-    marginBottom: 20,
-    gap: 8,
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: 16,
   },
-  statBox: {
-    flex: 1,
-    backgroundColor: colors.greenDeep,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: "rgba(91,175,114,0.2)",
-    borderRadius: 12,
-    paddingVertical: 10,
-    paddingHorizontal: 12,
+  headerTitle: {
+    fontSize: 28,
+    fontWeight: "700",
+    color: colors.text,
+    letterSpacing: -0.5,
   },
-  statNum: { fontSize: 20, fontWeight: "600", color: colors.text },
-  statLbl: { fontSize: 11, color: "rgba(255,255,255,0.45)", marginTop: 2 },
+  headerStatsRight: { flexDirection: "row", alignItems: "flex-start", gap: 20 },
+  headerStat: { alignItems: "flex-end" },
+  headerStatVal: {
+    fontSize: 20,
+    fontWeight: "700",
+    color: colors.text,
+    letterSpacing: -0.3,
+    lineHeight: 22,
+  },
+  headerStatLbl: {
+    marginTop: 3,
+    fontSize: 12,
+    color: "rgba(255,255,255,0.5)",
+    fontWeight: "400",
+    maxWidth: 140,
+    textAlign: "right",
+  },
 
   activeWalksList: {
     gap: 12,
@@ -360,17 +374,16 @@ const s = StyleSheet.create({
   tabsWrap: {
     flexDirection: "row",
     backgroundColor: colors.greenDeep,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: "rgba(255,255,255,0.08)",
+    paddingBottom: 0,
   },
   tab: {
-    paddingTop: 2,
+    paddingTop: 11,
     paddingBottom: 11,
-    marginRight: 20,
+    marginRight: 24,
     position: "relative",
   },
-  tabText: { fontSize: 13, fontWeight: "500", color: "rgba(255,255,255,0.4)" },
-  tabTextActive: { color: colors.greenText },
+  tabText: { fontSize: 15, fontWeight: "500", color: "rgba(255,255,255,0.4)" },
+  tabTextActive: { color: colors.text },
   tabLine: {
     position: "absolute",
     bottom: 0,
@@ -381,18 +394,18 @@ const s = StyleSheet.create({
     backgroundColor: colors.greenText,
   },
   tabBadge: {
-    backgroundColor: "rgba(255,255,255,0.1)",
-    borderRadius: 10,
+    backgroundColor: "rgba(255,255,255,0.18)",
+    borderRadius: 9,
     paddingHorizontal: 6,
     paddingVertical: 1,
   },
-  tabBadgeActive: { backgroundColor: "rgba(107,191,122,0.15)" },
+  tabBadgeActive: { backgroundColor: "rgba(255,255,255,0.18)" },
   tabBadgeText: {
     fontSize: 11,
     fontWeight: "600",
     color: "rgba(255,255,255,0.4)",
   },
-  tabBadgeTextActive: { color: colors.greenText },
+  tabBadgeTextActive: { color: "rgba(255,255,255,0.65)" },
 
   // Body
   body: {

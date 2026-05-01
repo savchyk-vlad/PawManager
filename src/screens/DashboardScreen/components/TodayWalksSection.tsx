@@ -3,6 +3,7 @@ import { RefreshControl, ScrollView, Text, View } from "react-native";
 import { Walk } from "../../../types";
 import { colors } from "../../../theme";
 import { DashboardEmptyState } from "./DashboardEmptyState";
+import { format } from "date-fns";
 
 type Props = {
   screenWidth: number;
@@ -35,6 +36,10 @@ export function TodayWalksSection({
   renderUpNextWalk,
   renderMissedAlert,
 }: Props) {
+  const showTodayDateForScheduled = overdueWalks.length > 0 || allUpcoming.length > 0;
+  const showDateUnderActive = activeWalks.length > 0 && showTodayDateForScheduled;
+  const showDateAboveScheduled = activeWalks.length === 0 && showTodayDateForScheduled;
+
   return (
     <ScrollView
       style={{ width: screenWidth }}
@@ -49,6 +54,10 @@ export function TodayWalksSection({
           progressBackgroundColor={colors.surface}
         />
       }>
+      {showDateAboveScheduled && (
+        <Text style={styles.sectionLabel}>{format(new Date(), "EEEE, MMM d")}</Text>
+      )}
+
       {activeWalks.length > 0 && (
         <>
           <Text style={styles.sectionLabel}>
@@ -64,11 +73,14 @@ export function TodayWalksSection({
         </>
       )}
 
+      {showDateUnderActive && (
+        <Text style={[styles.sectionLabel, { marginTop: 4 }]}>
+          {format(new Date(), "EEEE, MMM d")}
+        </Text>
+      )}
+
       {overdueWalks.length > 0 && (
         <>
-          <Text style={[styles.sectionLabel, activeWalks.length > 0 && { marginTop: 4 }]}>
-            Overdue
-          </Text>
           {overdueWalks.map((w) => renderScheduleWalk(w))}
         </>
       )}
@@ -101,15 +113,6 @@ export function TodayWalksSection({
 
       {allUpcoming.length > 0 && (
         <>
-          <Text
-            style={[
-              styles.sectionLabel,
-              (overdueWalks.length > 0 ||
-                visibleMissed.length > 0 ||
-                activeWalks.length > 0) && { marginTop: 4 },
-            ]}>
-            Upcoming
-          </Text>
           {allUpcoming.map((w) => renderScheduleWalk(w))}
         </>
       )}

@@ -61,7 +61,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.greenDeep,
     borderRadius: radius.lg,
     borderWidth: 1,
-    borderColor: colors.greenSubtle,
+    borderColor: colors.greenBorder,
     padding: 18,
     marginBottom: 16,
   },
@@ -113,7 +113,7 @@ const styles = StyleSheet.create({
   emptyCard: {
     backgroundColor: colors.greenDeep,
     borderWidth: 1,
-    borderColor: colors.greenSubtle,
+    borderColor: colors.greenBorder,
     borderRadius: radius.lg,
     paddingVertical: 28,
     paddingHorizontal: 20,

@@ -223,6 +223,7 @@ const s = StyleSheet.create({
     paddingTop: 14,
     paddingBottom: 12,
     gap: 12,
+    backgroundColor: colors.surfaceHigh,
   },
 
   /* Avatar */

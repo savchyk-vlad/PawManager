@@ -4,7 +4,7 @@ import { FormKeyboardScrollView } from "../../components/FormKeyboardScrollView"
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
-import { design } from "../../theme";
+import { auth } from "./authTheme";
 import { useAuthStore } from "../../store/authStore";
 import { AuthStackParamList } from "../../navigation/AuthNavigator";
 import {
@@ -19,7 +19,7 @@ import OAuthButtons from "../../components/OAuthButtons";
 
 type Nav = NativeStackNavigationProp<AuthStackParamList, "SignIn">;
 
-const dc = design.colors;
+const dc = auth.colors;
 
 export default function SignInScreen() {
   const navigation = useNavigation<Nav>();
@@ -104,7 +104,11 @@ export default function SignInScreen() {
 
           <OAuthButtons onError={setError} onLoadingChange={setLoading} />
 
-          <TouchableOpacity onPress={() => navigation.navigate("SignUp")}>
+          <TouchableOpacity
+            onPress={() => navigation.navigate("SignUp")}
+            style={s.linkBtn}
+            activeOpacity={0.85}
+            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
             <Text style={s.signUpLink}>
               Don't have an account?{" "}
               <Text style={s.signUpLinkBold}>Sign up free</Text>
@@ -116,15 +120,20 @@ export default function SignInScreen() {
 }
 
 const s = StyleSheet.create({
-  container: { flex: 1, backgroundColor: dc.surface },
+  container: { flex: 1, backgroundColor: dc.bg },
   content: {
     paddingHorizontal: 20,
     paddingTop: 24,
     paddingBottom: 40,
     gap: 20,
   },
+  linkBtn: {
+    paddingVertical: 10,
+    paddingHorizontal: 8,
+    alignSelf: "center",
+  },
   backBtn: { marginBottom: 4 },
-  backText: { fontSize: 14, fontWeight: "500", color: dc.textMuted },
+  backText: { fontSize: 14, fontWeight: "500", color: dc.text3 },
   headings: { gap: 4, marginBottom: 4 },
   title: {
     fontSize: 26,
@@ -132,15 +141,15 @@ const s = StyleSheet.create({
     letterSpacing: -0.5,
     color: dc.text,
   },
-  subtitle: { fontSize: 15, color: dc.textSecondary },
+  subtitle: { fontSize: 15, color: dc.text2 },
   form: { gap: 16 },
   forgotBtn: { alignSelf: "flex-end", marginTop: -8 },
-  forgotText: { fontSize: 13, fontWeight: "500", color: dc.greenDefault },
+  forgotText: { fontSize: 13, fontWeight: "600", color: dc.accent },
   signUpLink: {
     textAlign: "center",
     fontSize: 12,
-    color: dc.textMuted,
+    color: dc.text3,
     lineHeight: 18,
   },
-  signUpLinkBold: { fontWeight: "600", color: dc.greenDefault },
+  signUpLinkBold: { fontWeight: "600", color: dc.accent },
 });

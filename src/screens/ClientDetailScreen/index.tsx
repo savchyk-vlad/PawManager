@@ -337,10 +337,47 @@ const s = StyleSheet.create({
     borderColor: colors.border,
     paddingHorizontal: 8,
   },
+  cardHeader: {
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    backgroundColor: colors.surfaceHigh,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: colors.border,
+  },
+  cardHeaderText: {
+    fontSize: 10,
+    fontWeight: "700",
+    letterSpacing: 1.2,
+    textTransform: "uppercase",
+    color: colors.textMuted,
+  },
 
-  dogListItem: {
+  dogsCardsList: {
+    gap: 10,
+  },
+
+  walkCardsList: {
+    gap: 10,
+  },
+  walkCard: {
+    backgroundColor: colors.surface,
+    borderRadius: 16,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: colors.border,
     overflow: "hidden",
   },
+
+  dogClientCard: {
+    backgroundColor: colors.surface,
+    borderRadius: 16,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: colors.border,
+    overflow: "hidden",
+  },
+  dogClientCardTop: {
+    backgroundColor: colors.surfaceHigh,
+  },
+
   dogCardHeader: {
     flexDirection: "row",
     alignItems: "center",
@@ -356,27 +393,36 @@ const s = StyleSheet.create({
     justifyContent: "center",
   },
   dogName: { fontSize: 18, fontWeight: "700", color: colors.text, marginBottom: 2 },
-  dogBreed: { fontSize: 13, color: colors.textSecondary },
+  dogBreed: { fontSize: 13, color: colors.textMuted },
   dogMeta: { fontSize: 12, color: colors.textMuted, marginTop: 2 },
 
   dogStatStrip: {
     flexDirection: "row",
-    flexWrap: "wrap",
     gap: 6,
     paddingHorizontal: 14,
-    paddingBottom: 12,
+    paddingTop: 8,
+    paddingBottom: 8,
+    alignItems: "center",
   },
   dogStat: {
     flexDirection: "row",
     alignItems: "center",
     gap: 4,
-    backgroundColor: "rgba(255,255,255,0.05)",
+    backgroundColor: "rgba(0,0,0,0.28)",
     borderRadius: 999,
     paddingHorizontal: 9,
-    paddingVertical: 4,
+    paddingVertical: 0,
+    minHeight: 26,
   },
-  dogStatAmber: { backgroundColor: "rgba(240,160,48,0.1)" },
-  dogStatTxt: { fontSize: 11, fontWeight: "500", color: colors.textMuted },
+  dogStatAmber: { backgroundColor: "rgba(240,160,48,0.14)" },
+  dogStatTxt: {
+    fontSize: 11,
+    fontWeight: "500",
+    color: colors.textMuted,
+    lineHeight: 11,
+    paddingTop: 0,
+    includeFontPadding: false,
+  },
 
   traitRow: {
     flexDirection: "row",
@@ -419,18 +465,17 @@ const s = StyleSheet.create({
 
   walkRow: {
     flexDirection: "row",
-    alignItems: "center",
+    alignItems: "flex-start",
     paddingHorizontal: 14,
     paddingVertical: 14,
   },
   walkDate: { fontSize: 13, fontWeight: "600", color: colors.text, marginBottom: 3 },
   walkMeta: { fontSize: 12, color: colors.textSecondary },
-  walkRight: { flexDirection: "row", alignItems: "center", gap: 10, marginLeft: 10 },
+  walkRightCol: { alignItems: "flex-end", gap: 10, marginLeft: 10 },
+  walkBadgesTop: { flexDirection: "row", alignItems: "center", gap: 8 },
   statusBadge: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 999 },
   statusText: { fontSize: 11, fontWeight: "600" },
   paymentBadge: {
-    alignSelf: "flex-start",
-    marginTop: 7,
     paddingHorizontal: 8,
     paddingVertical: 3,
     borderRadius: 999,

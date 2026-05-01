@@ -46,7 +46,7 @@ export function ScheduleDayCarouselSection({
     if (walk.status === "in_progress") return { label: "Active", pill: styles.statusActive, avatar: styles.avatarGreen };
     if (walk.status === "cancelled") return { label: "Canceled", pill: styles.statusCanceled, avatar: styles.avatarAmber };
     if (missed) return { label: "Missed", pill: styles.statusMissed, avatar: styles.avatarAmber };
-    if (overdue) return { label: "Overdue", pill: styles.statusUpcoming, avatar: styles.avatarAmber };
+    if (overdue) return { label: "Waiting", pill: styles.statusUpcoming, avatar: styles.avatarAmber };
     return { label: "Upcoming", pill: styles.statusUpcoming, avatar: styles.avatarAmber };
   };
 
@@ -260,27 +260,34 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     paddingVertical: 13,
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: colors.border,
+    borderBottomColor: "rgba(255,255,255,0.05)",
+    backgroundColor: colors.surfaceHigh,
   },
   accHourLast: { borderBottomWidth: 0 },
   hourLeft: { flexDirection: "row", alignItems: "center", gap: 10, flex: 1 },
   hourTime: { minWidth: 62, fontSize: 12, fontWeight: "600", color: colors.text },
   hourStatusBadgesRow: { flexDirection: "row", alignItems: "center", gap: 6, flexWrap: "wrap", flex: 1 },
-  statusBadge: { borderRadius: 999, paddingHorizontal: 8, paddingVertical: 3 },
-  statusBadgeText: { fontSize: 10, fontWeight: "700", color: colors.text },
+  statusBadge: {
+    borderRadius: 999,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: "rgba(255,255,255,0.10)",
+  },
+  statusBadgeText: { fontSize: 10, fontWeight: "800", color: colors.text },
   statusBadgeActive: { backgroundColor: colors.greenDeep },
-  statusBadgeScheduled: { backgroundColor: colors.amberDeep },
-  statusBadgeMissed: { backgroundColor: colors.surfaceHigh },
-  statusBadgeDone: { backgroundColor: colors.greenDeep },
-  statusBadgeCanceled: { backgroundColor: colors.redDeep },
+  statusBadgeScheduled: { backgroundColor: "rgba(240,160,48,0.22)" },
+  statusBadgeMissed: { backgroundColor: "rgba(255,255,255,0.10)" },
+  statusBadgeDone: { backgroundColor: "rgba(61,124,71,0.20)" },
+  statusBadgeCanceled: { backgroundColor: "rgba(224,64,64,0.18)" },
   hourRight: { flexDirection: "row", alignItems: "center", gap: 8 },
   hourCountText: { fontSize: 11, color: colors.textSecondary, fontWeight: "500" },
   chevronIcon: {},
   chevronOpen: { transform: [{ rotate: "180deg" }] },
   hourBody: {
-    backgroundColor: colors.surfaceHigh,
+    backgroundColor: colors.surface,
     borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: colors.border,
+    borderTopColor: "rgba(255,255,255,0.05)",
     paddingVertical: 4,
   },
   statusSectionHeader: {
@@ -295,7 +302,7 @@ const styles = StyleSheet.create({
   statusSectionCount: { fontSize: 10, fontWeight: "700", color: colors.textMuted },
   statusSectionDivider: {
     height: StyleSheet.hairlineWidth,
-    backgroundColor: colors.border,
+    backgroundColor: "rgba(255,255,255,0.08)",
     marginHorizontal: 14,
     marginTop: 4,
   },

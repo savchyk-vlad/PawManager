@@ -25,7 +25,7 @@ export default function App() {
   useEffect(() => {
     if (!isSupabaseConfigured) return;
     void import('./src/lib/backgroundTasks').then((m) =>
-      m.registerBackgroundFetchAsync().catch(() => {
+      m.registerBackgroundTaskAsync().catch(() => {
         /* dev client / unsupported */
       })
     );

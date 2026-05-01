@@ -37,12 +37,6 @@ export function EditDogVetNotesStep({
         textAlignVertical="top"
       />
       <View style={styles.divider} />
-      <FormField
-        label="Key location"
-        value={draft.keyLocation}
-        onChangeText={(t) => setDraft({ ...draft, keyLocation: t })}
-        placeholder="Lockbox, door code…"
-      />
     </View>
   );
 }

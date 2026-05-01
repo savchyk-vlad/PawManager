@@ -25,6 +25,7 @@ export function DogDetailHero({
   navigation,
   font,
   styles,
+  allowEdit = true,
 }: {
   paddingTop: number;
   dog: Dog;
@@ -32,6 +33,7 @@ export function DogDetailHero({
   navigation: Nav;
   font: FontSet;
   styles: Styles;
+  allowEdit?: boolean;
 }) {
   return (
     <View style={[styles.hero, { paddingTop }]}>
@@ -42,16 +44,22 @@ export function DogDetailHero({
           hitSlop={{ top: 12, bottom: 12, left: 8, right: 8 }}>
           <Ionicons name="arrow-back" size={16} color="#FFFFFF" />
         </TouchableOpacity>
-        <TouchableOpacity
-          style={styles.editBtn}
-          onPress={() =>
-            navigation.navigate("EditDog", {
-              clientId,
-              dogId: dog.id,
-            })
-          }>
-          <Text style={[styles.editBtnText, { fontFamily: font.semi }]}>Edit</Text>
-        </TouchableOpacity>
+        {allowEdit ? (
+          <TouchableOpacity
+            style={styles.editBtn}
+            onPress={() =>
+              navigation.navigate("EditDog", {
+                clientId,
+                dogId: dog.id,
+              })
+            }>
+            <Text style={[styles.editBtnText, { fontFamily: font.semi }]}>
+              Edit
+            </Text>
+          </TouchableOpacity>
+        ) : (
+          <View style={{ width: 60 }} />
+        )}
       </View>
 
       <View style={styles.dogRow}>
@@ -59,23 +67,20 @@ export function DogDetailHero({
           <Text style={{ fontSize: 24 }}>{dog.emoji || "🐕"}</Text>
         </View>
         <View style={{ flex: 1 }}>
-          <Text style={[styles.dogName, { fontFamily: font.bold }]}>{dog.name}</Text>
-          <Text
-            style={[
-              styles.dogBreed,
-              { fontFamily: font.regular },
-              !dog.breed && { color: colors.textMuted },
-            ]}>
+          <Text style={[styles.dogName, { fontFamily: font.bold }]}>
+            {dog.name}
+          </Text>
+          <Text style={[styles.dogBreed, { fontFamily: font.regular }]}>
             {dog.breed || "Breed not provided"}
           </Text>
           <View style={styles.metaRow}>
             <View style={styles.metaPill}>
-              <Text style={[styles.metaPillText, dog.age <= 0 && { color: colors.textMuted }]}>
+              <Text style={[styles.metaPillText]}>
                 {dog.age > 0 ? `${dog.age} yr` : "Age not provided"}
               </Text>
             </View>
             <View style={styles.metaPill}>
-              <Text style={[styles.metaPillText, dog.weight <= 0 && { color: colors.textMuted }]}>
+              <Text style={[styles.metaPillText]}>
                 {dog.weight > 0 ? `${dog.weight} lb` : "Weight not provided"}
               </Text>
             </View>
@@ -88,9 +93,16 @@ export function DogDetailHero({
           {dog.traits.map((t, index) => {
             const st = traitPillStyle(t.type);
             return (
-              <View key={`${t.label}-${index}`} style={[styles.trait, { backgroundColor: st.bg }]}>
-                <Text style={[styles.traitText, { color: st.color, fontFamily: font.medium }]}>
-                  {t.type === "positive" ? "✓" : t.type === "red" ? "!" : "⚠"} {t.label}
+              <View
+                key={`${t.label}-${index}`}
+                style={[styles.trait, { backgroundColor: st.bg }]}>
+                <Text
+                  style={[
+                    styles.traitText,
+                    { color: st.color, fontFamily: font.medium },
+                  ]}>
+                  {t.type === "positive" ? "✓" : t.type === "red" ? "!" : "⚠"}{" "}
+                  {t.label}
                 </Text>
               </View>
             );

@@ -53,7 +53,7 @@ interface AppState {
   loadClients: (userId: string) => Promise<void>;
   loadWalks: (userId: string) => Promise<void>;
   addClient: (client: Omit<Client, 'id'>, userId: string) => Promise<void>;
-  updateClient: (clientId: string, fields: { name: string; address: string; phone: string; pricePerWalk: number }) => Promise<void>;
+  updateClient: (clientId: string, fields: { name: string; address: string; phone: string; keyLocation: string; pricePerWalk: number }) => Promise<void>;
   addDogToClient: (clientId: string, dog: Omit<Dog, 'id'>) => Promise<Dog>;
   updateDogOnClient: (
     clientId: string,
@@ -243,7 +243,6 @@ export const useAppStore = create<AppState>((set, get) => ({
           vet: payload.vet,
           vetPhone: payload.vetPhone,
           medical: payload.medical,
-          keyLocation: payload.keyLocation,
         });
         await replaceDogTraits(existingDogId, traitsClean);
       } catch (e: any) {

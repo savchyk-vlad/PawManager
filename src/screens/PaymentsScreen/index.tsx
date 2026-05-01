@@ -46,7 +46,7 @@ export default function PaymentsScreen() {
   const insets = useSafeAreaInsets();
   const navigation = useNavigation<Nav>();
   const { walks, clients, markClientPaid, markWalkPaid } = useAppStore();
-  const [expandedClientIds, setExpandedClientIds] = useState<Set<string>>(new Set());
+  const [expandedClientId, setExpandedClientId] = useState<string | null>(null);
 
   const now = new Date();
   const monthLabel = format(now, 'MMMM yyyy');
@@ -136,12 +136,7 @@ export default function PaymentsScreen() {
       UIManager.setLayoutAnimationEnabledExperimental(true);
     }
     LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
-    setExpandedClientIds((prev) => {
-      const next = new Set(prev);
-      if (next.has(clientId)) next.delete(clientId);
-      else next.add(clientId);
-      return next;
-    });
+    setExpandedClientId((prev) => (prev === clientId ? null : clientId));
   };
 
   return (
@@ -158,7 +153,7 @@ export default function PaymentsScreen() {
         {unpaidByClient.length > 0 ? (
           <UnpaidClientsSection
             unpaidByClient={unpaidByClient}
-            expandedClientIds={expandedClientIds}
+            expandedClientId={expandedClientId}
             currency={currency}
             dogNamesForWalk={dogNamesForWalk}
             onToggleClient={toggleClient}
@@ -186,8 +181,8 @@ const styles = StyleSheet.create({
     backgroundColor: colors.bg,
   },
   content: {
-    paddingHorizontal: 20,
-    paddingTop: 18,
+    paddingHorizontal: 16,
+    paddingTop: 12,
     paddingBottom: 40,
   },
 });

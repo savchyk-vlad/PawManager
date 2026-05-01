@@ -32,6 +32,7 @@ export function DogDetailWalksTab({
   styles,
   screenW,
   navigation,
+  allowOpenWalks = true,
 }: {
   dogWalks: Walk[];
   visibleWalks: Walk[];
@@ -43,6 +44,7 @@ export function DogDetailWalksTab({
   styles: Styles;
   screenW: number;
   navigation: Nav;
+  allowOpenWalks?: boolean;
 }) {
   const hasMoreWalks = dogWalks.length > walkShowCount;
 
@@ -67,8 +69,9 @@ export function DogDetailWalksTab({
                 <TouchableOpacity
                   key={w.id}
                   style={[styles.walkRow, i < visibleWalks.length - 1 && styles.walkRowBorder]}
-                  onPress={() => navigation.navigate("ActiveWalk", { walkId: w.id })}
-                  activeOpacity={0.75}>
+                  onPress={allowOpenWalks ? () => navigation.navigate("ActiveWalk", { walkId: w.id }) : undefined}
+                  activeOpacity={allowOpenWalks ? 0.75 : 1}
+                  disabled={!allowOpenWalks}>
                   <View style={[styles.walkDot, { backgroundColor: dotColor }]} />
                   <Text style={[styles.walkDate, { fontFamily: font.medium }]} numberOfLines={1}>
                     {formatWalkWhen(w)}

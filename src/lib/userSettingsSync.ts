@@ -13,20 +13,7 @@ export type PawPrefsStored = {
   notificationsEnabled: boolean;
   dailySummaryEnabled: boolean;
   unpaidReminderEnabled: boolean;
-  workingDays: boolean[];
-  shiftStart: string;
-  shiftEnd: string;
 };
-
-const DEFAULT_WORKING_DAYS: boolean[] = [
-  true,
-  true,
-  true,
-  true,
-  true,
-  false,
-  false,
-];
 
 function isWalkDuration(n: number): n is WalkDuration {
   return n === 15 || n === 30 || n === 45 || n === 60;
@@ -34,12 +21,6 @@ function isWalkDuration(n: number): n is WalkDuration {
 
 function isReminderTiming(n: number): n is ReminderTiming {
   return n === 15 || n === 30 || n === 60;
-}
-
-function clampWorkingDays(raw: unknown): boolean[] | null {
-  if (!Array.isArray(raw) || raw.length !== 7) return null;
-  if (!raw.every((x) => typeof x === "boolean")) return null;
-  return [...raw];
 }
 
 /** Build metadata payload for `auth.updateUser` from prefs + business name. */
@@ -92,14 +73,6 @@ export function metadataToPrefsPatch(meta: User["user_metadata"]): Partial<PawPr
   if (typeof o.unpaidReminderEnabled === "boolean") {
     out.unpaidReminderEnabled = o.unpaidReminderEnabled;
   }
-  const wd = clampWorkingDays(o.workingDays);
-  if (wd) out.workingDays = wd;
-  if (typeof o.shiftStart === "string" && /^\d{1,2}:\d{2}$/.test(o.shiftStart.trim())) {
-    out.shiftStart = o.shiftStart.trim();
-  }
-  if (typeof o.shiftEnd === "string" && /^\d{1,2}:\d{2}$/.test(o.shiftEnd.trim())) {
-    out.shiftEnd = o.shiftEnd.trim();
-  }
 
   return Object.keys(out).length ? out : null;
 }
@@ -132,9 +105,6 @@ export function hydrateSettingsFromUser(user: User) {
     ...(patch?.unpaidReminderEnabled != null
       ? { unpaidReminderEnabled: patch.unpaidReminderEnabled }
       : {}),
-    ...(patch?.workingDays != null ? { workingDays: patch.workingDays } : {}),
-    ...(patch?.shiftStart != null ? { shiftStart: patch.shiftStart } : {}),
-    ...(patch?.shiftEnd != null ? { shiftEnd: patch.shiftEnd } : {}),
   }));
 }
 
@@ -151,9 +121,6 @@ export function prefsFromStoreState(get: {
   notificationsEnabled: boolean;
   dailySummaryEnabled: boolean;
   unpaidReminderEnabled: boolean;
-  workingDays: boolean[];
-  shiftStart: string;
-  shiftEnd: string;
 }): PawPrefsStored {
   return {
     v: PAW_PREFS_VERSION,
@@ -164,11 +131,5 @@ export function prefsFromStoreState(get: {
     notificationsEnabled: get.notificationsEnabled,
     dailySummaryEnabled: get.dailySummaryEnabled,
     unpaidReminderEnabled: get.unpaidReminderEnabled,
-    workingDays:
-      get.workingDays?.length === 7 ? [...get.workingDays] : [...DEFAULT_WORKING_DAYS],
-    shiftStart: get.shiftStart || "08:00",
-    shiftEnd: get.shiftEnd || "18:00",
   };
 }
-
-export { DEFAULT_WORKING_DAYS };

@@ -1,6 +1,8 @@
-/** Parse `HH:mm` (24h) to minutes from midnight; invalid → null */
+/** Parse `HH:mm` (24h) to minutes from midnight; invalid → null. `24:00` is end-of-day (1440). */
 export function minutesFromHHmm(value: string): number | null {
-  const m = /^(\d{1,2}):(\d{2})$/.exec(value.trim());
+  const t = value.trim();
+  if (t === "24:00") return 24 * 60;
+  const m = /^(\d{1,2}):(\d{2})$/.exec(t);
   if (!m) return null;
   const h = Number(m[1]);
   const min = Number(m[2]);
@@ -20,6 +22,10 @@ export function minutesFromHHmm(value: string): number | null {
 const SLOT_STEP = 30;
 const FALLBACK_START_MINS = 6 * 60;
 const FALLBACK_END_MINS = 22 * 60;
+
+/** Full local day — scheduling UI lists starts from midnight through end of day. */
+export const DEFAULT_SCHEDULE_WINDOW_START_HHMM = "00:00";
+export const DEFAULT_SCHEDULE_WINDOW_END_HHMM = "24:00";
 
 /**
  * 30-minute walk start times on `dayAtLocalMidnight` such that the walk fits fully inside [shiftStart, shiftEnd].

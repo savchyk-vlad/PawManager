@@ -11,6 +11,7 @@ import { walkCharge, walkDogCount } from '../../lib/walkMetrics';
 import { CancelledWalkView } from './components/CancelledWalkView';
 import { ActiveWalkMainView } from './components/ActiveWalkMainView';
 import { CompletedWalkView } from './components/CompletedWalkView';
+import { FinishWalkSheet } from '../../components/FinishWalkSheet';
 
 type Route = RouteProp<RootStackParamList, 'ActiveWalk'>;
 type Nav = NativeStackNavigationProp<RootStackParamList>;
@@ -29,6 +30,8 @@ export default function ActiveWalkScreen() {
   const insets = useSafeAreaInsets();
   const { walks, clients, finishWalk, startWalk } = useAppStore();
   const [elapsed, setElapsed] = useState(0);
+  const [finishConfirmVisible, setFinishConfirmVisible] = useState(false);
+  const [finishing, setFinishing] = useState(false);
 
   const walk = walks.find((w) => w.id === route.params.walkId);
   const isScheduled = walk?.status === 'scheduled';
@@ -70,6 +73,15 @@ export default function ActiveWalkScreen() {
         topInset={insets.top}
         bottomInset={insets.bottom}
         onBack={() => navigation.goBack()}
+        onOpenDog={(dogId) =>
+          clientRow
+            ? navigation.navigate("DogDetail", {
+                clientId: clientRow.id,
+                dogId,
+                allowDelete: false,
+              })
+            : undefined
+        }
       />
     );
   }
@@ -123,24 +135,23 @@ export default function ActiveWalkScreen() {
     }
   };
 
-  const handleFinish = () => {
-    Alert.alert('Finish walk?', `Duration: ${formatTime(elapsed)}`, [
-      { text: 'Cancel', style: 'cancel' },
-      {
-        text: 'Finish',
-        onPress: async () => {
-          try {
-            await finishWalk(walk.id);
-          } catch (error: any) {
-            Alert.alert('Error', error?.message ?? 'Could not finish walk.');
-          }
-        },
-      },
-    ]);
+  const handleFinish = () => setFinishConfirmVisible(true);
+
+  const confirmFinish = async () => {
+    if (finishing) return;
+    setFinishing(true);
+    try {
+      await finishWalk(walk.id);
+      setFinishConfirmVisible(false);
+    } catch (error: any) {
+      Alert.alert('Error', error?.message ?? 'Could not finish walk.');
+    } finally {
+      setFinishing(false);
+    }
   };
 
   const notesText = [
-    dog?.keyLocation && `Key: ${dog.keyLocation}`,
+    client.keyLocation && `Client notes: ${client.keyLocation}`,
     dog?.medical && dog.medical,
     dog?.vet && `Vet: ${dog.vet}${dog.vetPhone ? ` (${dog.vetPhone})` : ''}`,
   ]
@@ -154,27 +165,55 @@ export default function ActiveWalkScreen() {
   const billingDogCount = walkDogCount(walk);
 
   return (
-    <ActiveWalkMainView
-      walk={walk}
-      client={client}
-      dogs={dogs}
-      isScheduled={isScheduled}
-      isInProgress={isInProgress}
-      elapsedLabel={formatTime(elapsed)}
-      scheduleWhen={scheduleWhen}
-      isLateToStart={isLateToStart}
-      endTimeLabel={endTimeLabel}
-      notesText={notesText}
-      billingTotal={billingTotal}
-      billingUsesPerDog={billingUsesPerDog}
-      billingDogCount={billingDogCount}
-      walkPerDogMap={walkPerDogMap}
-      topInset={insets.top}
-      bottomInset={insets.bottom}
-      onBack={() => navigation.goBack()}
-      onEdit={() => navigation.navigate('EditWalk', { walkId: walk.id })}
-      onStartWalk={handleStartWalk}
-      onFinishWalk={handleFinish}
-    />
+    <>
+      <ActiveWalkMainView
+        walk={walk}
+        client={client}
+        dogs={dogs}
+        isScheduled={isScheduled}
+        isInProgress={isInProgress}
+        elapsedLabel={formatTime(elapsed)}
+        scheduleWhen={scheduleWhen}
+        isLateToStart={isLateToStart}
+        endTimeLabel={endTimeLabel}
+        notesText={notesText}
+        billingTotal={billingTotal}
+        billingUsesPerDog={billingUsesPerDog}
+        billingDogCount={billingDogCount}
+        walkPerDogMap={walkPerDogMap}
+        topInset={insets.top}
+        bottomInset={insets.bottom}
+        onBack={() => navigation.goBack()}
+        onEdit={() => navigation.navigate('EditWalk', { walkId: walk.id })}
+        onStartWalk={handleStartWalk}
+        onFinishWalk={handleFinish}
+        onOpenDog={(dogId) =>
+          navigation.navigate("DogDetail", {
+            clientId: client.id,
+            dogId,
+            allowDelete: false,
+          })
+        }
+      />
+
+      <FinishWalkSheet
+        visible={finishConfirmVisible}
+        elapsedSeconds={elapsed}
+        plannedMinutes={walk.durationMinutes}
+        clientName={client.name}
+        dogsLabel={dogs.length > 1 ? 'Dogs' : 'Dog'}
+        dogsValue={
+          dogs.length <= 1
+            ? (dogs[0]?.name ?? '—')
+            : dogs.map((d) => d.name).join(', ')
+        }
+        totalAmount={billingTotal}
+        loading={finishing}
+        onConfirm={confirmFinish}
+        onCancel={() => {
+          if (!finishing) setFinishConfirmVisible(false);
+        }}
+      />
+    </>
   );
 }

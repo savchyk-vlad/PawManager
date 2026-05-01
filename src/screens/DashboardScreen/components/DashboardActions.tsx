@@ -5,6 +5,7 @@ type DashboardTab = "schedule" | "completed";
 
 type Props = {
   activeTab: DashboardTab;
+  scheduledCount: number;
   completedCount: number;
   onSwitchTab: (tab: DashboardTab) => void;
   styles: any;
@@ -12,6 +13,7 @@ type Props = {
 
 export function DashboardActions({
   activeTab,
+  scheduledCount,
   completedCount,
   onSwitchTab,
   styles,
@@ -19,9 +21,22 @@ export function DashboardActions({
   return (
     <View style={styles.tabsWrap}>
       <TouchableOpacity style={styles.tab} onPress={() => onSwitchTab("schedule")}>
-        <Text style={[styles.tabText, activeTab === "schedule" && styles.tabTextActive]}>
-          Scheduled
-        </Text>
+        <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
+          <Text style={[styles.tabText, activeTab === "schedule" && styles.tabTextActive]}>
+            Scheduled
+          </Text>
+          {scheduledCount > 0 && (
+            <View style={[styles.tabBadge, activeTab === "schedule" && styles.tabBadgeActive]}>
+              <Text
+                style={[
+                  styles.tabBadgeText,
+                  activeTab === "schedule" && styles.tabBadgeTextActive,
+                ]}>
+                {scheduledCount}
+              </Text>
+            </View>
+          )}
+        </View>
         {activeTab === "schedule" && <View style={styles.tabLine} />}
       </TouchableOpacity>
 

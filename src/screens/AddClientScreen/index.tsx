@@ -25,6 +25,7 @@ export default function AddClientScreen() {
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
   const [address, setAddress] = useState("");
+  const [keyLocation, setKeyLocation] = useState("");
   const [price, setPrice] = useState(() => formatRateInput(useSettingsStore.getState().defaultRate));
   const [saving, setSaving] = useState(false);
 
@@ -39,6 +40,7 @@ export default function AddClientScreen() {
           name: name.trim(),
           phone: phone.trim(),
           address: address.trim(),
+          keyLocation: keyLocation.trim(),
           pricePerWalk: parseFloat(price) || 0,
           dogs: [],
         },
@@ -80,10 +82,12 @@ export default function AddClientScreen() {
           name={name}
           phone={phone}
           address={address}
+          keyLocation={keyLocation}
           price={price}
           onChangeName={setName}
           onChangePhone={setPhone}
           onChangeAddress={setAddress}
+          onChangeKeyLocation={setKeyLocation}
           onChangePrice={setPrice}
           defaultRatePlaceholder={defaultHint}
           defaultRateHintFragment={defaultHint}

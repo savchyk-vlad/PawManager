@@ -23,12 +23,11 @@ export function ClientDetailWalksTab({
       {clientWalks.length === 0 ? (
         <EmptyPlaceholder text="No walks yet" />
       ) : (
-        <View style={styles.card}>
-          {clientWalks.map((w, i) => (
-            <React.Fragment key={w.id}>
+        <View style={styles.walkCardsList}>
+          {clientWalks.map((w) => (
+            <View key={w.id} style={styles.walkCard}>
               <WalkRow walk={w} client={client} styles={styles} />
-              {i < clientWalks.length - 1 && <View style={styles.rowDivider} />}
-            </React.Fragment>
+            </View>
           ))}
         </View>
       )}

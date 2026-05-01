@@ -3,7 +3,7 @@ import { View, Text, TouchableOpacity, StyleSheet, ScrollView } from "react-nati
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
-import { design } from "../../../theme";
+import { auth } from "../authTheme";
 import { AuthStackParamList } from "../../../navigation/AuthNavigator";
 import { PrimaryButton } from "../../../components/auth/AuthComponents";
 import { WelcomeHero } from "./components/WelcomeHero";
@@ -11,8 +11,8 @@ import { WelcomeValuePropsCard } from "./components/WelcomeValuePropsCard";
 
 type Nav = NativeStackNavigationProp<AuthStackParamList, "Welcome">;
 
-const dc = design.colors;
-const dr = design.radius;
+const dc = auth.colors;
+const dr = auth.radius;
 
 export default function WelcomeScreen() {
   const navigation = useNavigation<Nav>();
@@ -27,7 +27,11 @@ export default function WelcomeScreen() {
 
           <PrimaryButton label="Get Started Free" onPress={() => navigation.navigate("SignUp")} />
 
-          <TouchableOpacity onPress={() => navigation.navigate("SignIn")}>
+          <TouchableOpacity
+            onPress={() => navigation.navigate("SignIn")}
+            style={s.linkBtn}
+            activeOpacity={0.85}
+            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
             <Text style={s.signInLink}>
               Already have an account? <Text style={s.signInLinkBold}>Sign in</Text>
             </Text>
@@ -39,7 +43,7 @@ export default function WelcomeScreen() {
 }
 
 const s = StyleSheet.create({
-  container: { flex: 1, backgroundColor: dc.surface },
+  container: { flex: 1, backgroundColor: dc.bg },
 
   hero: {
     alignItems: "center",
@@ -52,14 +56,19 @@ const s = StyleSheet.create({
   title: { fontSize: 28, fontWeight: "700", letterSpacing: -0.5, color: dc.text },
   subtitle: {
     fontSize: 15,
-    color: dc.textSecondary,
+    color: dc.text2,
     textAlign: "center",
     lineHeight: 22,
   },
 
   body: { paddingHorizontal: 20, paddingTop: 20, paddingBottom: 40, gap: 34 },
+  linkBtn: {
+    paddingVertical: 10,
+    paddingHorizontal: 8,
+    alignSelf: "center",
+  },
   card: {
-    backgroundColor: dc.bg,
+    backgroundColor: dc.bg2,
     borderRadius: dr.lg,
     borderWidth: 1,
     borderColor: dc.border,
@@ -75,9 +84,9 @@ const s = StyleSheet.create({
   },
   propEmoji: { fontSize: 24 },
   propTitle: { fontSize: 14, fontWeight: "600", color: dc.text, marginBottom: 2 },
-  propSub: { fontSize: 12, color: dc.textSecondary, lineHeight: 17 },
+  propSub: { fontSize: 12, color: dc.text2, lineHeight: 17 },
   propDivider: { height: 1, backgroundColor: dc.border },
 
-  signInLink: { textAlign: "center", fontSize: 13, color: dc.textMuted },
-  signInLinkBold: { fontWeight: "600", color: dc.greenDefault },
+  signInLink: { textAlign: "center", fontSize: 13, color: dc.text3 },
+  signInLinkBold: { fontWeight: "600", color: dc.accent },
 });

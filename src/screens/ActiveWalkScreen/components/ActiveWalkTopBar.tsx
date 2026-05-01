@@ -13,7 +13,7 @@ export function ActiveWalkTopBar({ isScheduled, onBack, onEdit }: Props) {
   return (
     <View style={styles.topBar}>
       <TouchableOpacity style={styles.backBtn} onPress={onBack}>
-        <Ionicons name="arrow-back" size={16} color="white" />
+        <Ionicons name="arrow-back" size={16} color={colors.textSecondary} />
         <Text style={styles.backText}>Back</Text>
       </TouchableOpacity>
       <Text style={styles.inProgressLabel}>
@@ -21,7 +21,7 @@ export function ActiveWalkTopBar({ isScheduled, onBack, onEdit }: Props) {
       </Text>
       {isScheduled ? (
         <TouchableOpacity style={styles.headerEditBtn} onPress={onEdit} activeOpacity={0.85}>
-          <Text style={styles.headerEditText}>Edit</Text>
+          <Text style={styles.headerEditText}>Edit walk</Text>
         </TouchableOpacity>
       ) : (
         <View style={styles.headerSpacer} />
@@ -36,37 +36,42 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "space-between",
     marginBottom: 16,
+    paddingHorizontal: 16,
   },
   backBtn: {
     flexDirection: "row",
     alignItems: "center",
     gap: 8,
-    backgroundColor: "rgba(255,255,255,0.12)",
+    backgroundColor: colors.surface,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: colors.border,
     paddingHorizontal: 12,
     paddingVertical: 8,
-    borderRadius: 12,
+    borderRadius: 20,
   },
   backText: {
-    color: "white",
+    color: colors.textSecondary,
     fontSize: 13,
     fontWeight: "600",
   },
   inProgressLabel: {
-    color: "rgba(255,255,255,0.86)",
+    color: colors.textMuted,
     fontSize: 11,
     letterSpacing: 1.1,
     fontWeight: "700",
   },
   headerEditBtn: {
-    backgroundColor: "white",
-    borderRadius: 10,
+    backgroundColor: colors.surface,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: colors.border,
+    borderRadius: 20,
     paddingHorizontal: 12,
     paddingVertical: 8,
   },
   headerEditText: {
-    color: colors.greenDeep,
+    color: colors.textSecondary,
     fontSize: 13,
-    fontWeight: "700",
+    fontWeight: "600",
   },
   headerSpacer: { width: 72 },
 });

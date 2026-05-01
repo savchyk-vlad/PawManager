@@ -39,8 +39,13 @@ import SubscriptionsScreen from "../screens/SubscriptionsScreen";
 import HelpFAQScreen from "../screens/HelpFAQScreen";
 import FeedbackScreen from "../screens/FeedbackScreen";
 import AuthNavigator from "./AuthNavigator";
+import OnboardingNavigator from "./OnboardingNavigator";
 import { useAuthStore } from "../store/authStore";
 import { supabase } from "../lib/supabase";
+import {
+  getOnboardingCompleted,
+  setOnboardingCompleted,
+} from "../lib/onboardingStorage";
 
 export type TabParamList = {
   Clients: undefined;
@@ -53,7 +58,7 @@ export type TabParamList = {
 export type RootStackParamList = {
   Tabs: NavigatorScreenParams<TabParamList>;
   ClientDetail: { clientId: string };
-  DogDetail: { clientId: string; dogId: string };
+  DogDetail: { clientId: string; dogId: string; allowDelete?: boolean };
   /** Omit dogId to add a new dog for the client. */
   EditDog: { clientId: string; dogId?: string };
   ActiveWalk: { walkId: string };
@@ -218,10 +223,10 @@ function TabNavigator() {
           fontWeight: "500",
         },
       })}>
-      <Tab.Screen name="Clients" component={ClientsScreen} />
+      <Tab.Screen name="Payments" component={PaymentsScreen} />
       <Tab.Screen name="Schedule" component={ScheduleScreen} />
       <Tab.Screen name="Walks" component={DashboardScreen} />
-      <Tab.Screen name="Payments" component={PaymentsScreen} />
+      <Tab.Screen name="Clients" component={ClientsScreen} />
       <Tab.Screen name="Settings" component={SettingsScreen} />
     </Tab.Navigator>
   );
@@ -273,6 +278,9 @@ export default function Navigation() {
   const loadClients = useAppStore((s) => s.loadClients);
   const loadWalks = useAppStore((s) => s.loadWalks);
   const clearData = useAppStore((s) => s.clearData);
+  const [onboardingDone, setOnboardingDoneState] = React.useState<
+    boolean | null
+  >(null);
 
   useEffect(() => {
     supabase.auth
@@ -287,6 +295,17 @@ export default function Navigation() {
   }, []);
 
   useEffect(() => {
+    let alive = true;
+    getOnboardingCompleted().then((v) => {
+      if (!alive) return;
+      setOnboardingDoneState(v);
+    });
+    return () => {
+      alive = false;
+    };
+  }, []);
+
+  useEffect(() => {
     const userId = session?.user?.id;
     if (!userId) {
       clearData();
@@ -297,7 +316,7 @@ export default function Navigation() {
     loadWalks(userId);
   }, [session?.user?.id]);
 
-  /** Re-run missed-walk sweep when app returns to foreground (tighter than ~15m BackgroundFetch alone). */
+  /** Re-run missed-walk sweep when app returns to foreground (tighter than ~15m background task alone). */
   useEffect(() => {
     const userId = session?.user?.id;
     if (!userId) return;
@@ -309,7 +328,7 @@ export default function Navigation() {
     return () => sub.remove();
   }, [session?.user?.id, loadWalks]);
 
-  if (loading) {
+  if (loading || onboardingDone == null) {
     return (
       <View
         style={{
@@ -325,7 +344,18 @@ export default function Navigation() {
 
   return (
     <NavigationContainer>
-      {session ? <AppNavigator /> : <AuthNavigator />}
+      {session ? (
+        <AppNavigator />
+      ) : onboardingDone ? (
+        <AuthNavigator />
+      ) : (
+        <OnboardingNavigator
+          onDone={() => {
+            setOnboardingDoneState(true);
+            void setOnboardingCompleted(true);
+          }}
+        />
+      )}
     </NavigationContainer>
   );
 }

@@ -4,11 +4,6 @@ import { Ionicons } from '@expo/vector-icons';
 import { addMonths, endOfMonth, format, isSameDay, isToday, parseISO, startOfDay, subMonths } from 'date-fns';
 import { chunkIntoRows, padCalendarToFullWeeks } from '../lib/calendarWeekRows';
 import { localCalendarMidnightFromIso } from '../lib/localCalendar';
-import {
-  isUserWorkingDay,
-  snapToNearestWorkingDay,
-} from '../lib/workingDays';
-import { useSettingsStore } from '../store/settingsStore';
 import { colors } from '../theme';
 
 type CalendarCell = { type: 'empty' } | { type: 'day'; date: Date };
@@ -32,7 +27,6 @@ export function ScheduleCalendar({
   onSelectedTimeChange,
   onPickDate,
 }: Props) {
-  const workingDays = useSettingsStore((s) => s.workingDays);
   const selectedCalendarDay = localCalendarMidnightFromIso(selectedTime);
 
   const weekRows = useMemo(() => {
@@ -55,9 +49,6 @@ export function ScheduleCalendar({
     const targetDay = Math.min(selected.getDate(), maxDayInTarget);
     let next = new Date(targetMonth);
     next.setDate(targetDay);
-    if (!isUserWorkingDay(next, workingDays)) {
-      next = snapToNearestWorkingDay(next, workingDays);
-    }
     next.setHours(selected.getHours(), selected.getMinutes(), 0, 0);
     onMonthDateChange(targetMonth);
     onSelectedTimeChange(next.toISOString());
@@ -93,25 +84,21 @@ export function ScheduleCalendar({
               const takenCount =
                 takenByDayMs.get(startOfDay(cell.date).getTime()) ?? 0;
               const hasTaken = takenCount > 0;
-              const allowed = isUserWorkingDay(cell.date, workingDays);
               return (
                 <TouchableOpacity
                   key={format(cell.date, 'yyyy-MM-dd')}
                   style={[
                     s.calDay,
                     selected && s.calDaySelected,
-                    !allowed && s.calDayDisabled,
                   ]}
-                  disabled={!allowed}
-                  onPress={() => allowed && applyDayToSelectedTime(cell.date)}
-                  activeOpacity={allowed ? 0.8 : 1}
+                  onPress={() => applyDayToSelectedTime(cell.date)}
+                  activeOpacity={0.8}
                 >
                   <Text
                     style={[
                       s.calDayNum,
                       today && s.calDayNumToday,
                       selected && s.calDayNumSelected,
-                      !allowed && s.calDayNumDisabled,
                     ]}
                   >
                     {format(cell.date, 'd')}
@@ -169,9 +156,7 @@ const s = StyleSheet.create({
     position: 'relative',
   },
   calDaySelected: { backgroundColor: colors.greenDeep },
-  calDayDisabled: { opacity: 0.38 },
   calDayNum: { fontSize: 12, color: colors.textSecondary, fontWeight: '500' },
-  calDayNumDisabled: { color: colors.textMuted },
   calDayNumToday: {
     backgroundColor: colors.greenDeep,
     color: '#fff',

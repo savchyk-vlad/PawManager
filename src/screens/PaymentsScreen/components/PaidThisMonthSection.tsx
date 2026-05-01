@@ -30,13 +30,14 @@ export function PaidThisMonthSection({
 
 const styles = StyleSheet.create({
   sectionHeader: {
-    marginBottom: 10,
+    marginBottom: 8,
+    marginTop: 2,
   },
   sectionTitle: {
-    fontSize: 13,
-    fontWeight: '600',
-    color: colors.textSecondary,
+    fontSize: 11,
+    fontWeight: '700',
+    color: colors.textMuted,
     textTransform: 'uppercase',
-    letterSpacing: 0.8,
+    letterSpacing: 1.1,
   },
 });

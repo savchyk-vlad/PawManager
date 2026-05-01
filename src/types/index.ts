@@ -13,7 +13,6 @@ export interface Dog {
   vet: string;
   vetPhone: string;
   medical: string;
-  keyLocation: string;
   isDeleted?: boolean;
 }
 
@@ -23,6 +22,7 @@ export interface Client {
   address: string;
   phone: string;
   pricePerWalk: number;
+  keyLocation: string;
   dogs: Dog[];
 }
 
