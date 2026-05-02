@@ -4,7 +4,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { Dog } from "../../../types";
 import { RootStackParamList } from "../../../navigation";
-import { colors } from "../../../theme";
+import { useThemeColors } from "../../../theme";
 import { traitPillStyle } from "../dogDetailUtils";
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
@@ -35,6 +35,7 @@ export function DogDetailHero({
   styles: Styles;
   allowEdit?: boolean;
 }) {
+  const colors = useThemeColors();
   return (
     <View style={[styles.hero, { paddingTop }]}>
       <View style={styles.heroTopRow}>
@@ -42,7 +43,7 @@ export function DogDetailHero({
           style={styles.backBtn}
           onPress={() => navigation.goBack()}
           hitSlop={{ top: 12, bottom: 12, left: 8, right: 8 }}>
-          <Ionicons name="arrow-back" size={16} color="#FFFFFF" />
+          <Ionicons name="arrow-back" size={16} color="rgba(255,255,255,0.45)" />
         </TouchableOpacity>
         {allowEdit ? (
           <TouchableOpacity
@@ -91,7 +92,7 @@ export function DogDetailHero({
       {dog.traits.length > 0 && (
         <View style={styles.traitRow}>
           {dog.traits.map((t, index) => {
-            const st = traitPillStyle(t.type);
+            const st = traitPillStyle(t.type, colors);
             return (
               <View
                 key={`${t.label}-${index}`}

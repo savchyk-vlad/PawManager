@@ -1,9 +1,10 @@
 import React from "react";
 import { View, Text, StyleSheet } from "react-native";
 import { Walk } from "../types";
-import { colors } from "../theme";
+import { useThemeColors } from "../theme";
 
 export function PaymentStatusPill({ status }: { status: Walk["paymentStatus"] }) {
+  const colors = useThemeColors();
   const cfg =
     status === "paid"
       ? {
@@ -40,13 +41,13 @@ export function PaymentStatusPill({ status }: { status: Walk["paymentStatus"] })
 const st = StyleSheet.create({
   pill: {
     alignSelf: "flex-start",
-    paddingHorizontal: 8,
-    paddingVertical: 3,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
     borderRadius: 8,
     borderWidth: StyleSheet.hairlineWidth,
   },
   text: {
-    fontSize: 10,
+    fontSize: 11,
     fontWeight: "700",
     letterSpacing: 0.3,
   },

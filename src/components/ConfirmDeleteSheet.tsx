@@ -1,4 +1,4 @@
-import React, { useRef, useEffect } from 'react';
+import React, { useRef, useEffect, useMemo } from 'react';
 import {
   Modal,
   View,
@@ -16,7 +16,7 @@ import {
 } from 'react-native-gesture-handler';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { colors } from '../theme';
+import { useThemeColors } from '../theme';
 
 export type DeleteSheetRow = {
   label: string;
@@ -40,8 +40,6 @@ type Props = {
 const DISMISS_THRESHOLD = 100;
 const CLOSED_Y = 700;
 
-const Amber = colors.amberDefault;
-
 export function ConfirmDeleteSheet({
   visible,
   title,
@@ -53,8 +51,152 @@ export function ConfirmDeleteSheet({
   onConfirm,
   onCancel,
 }: Props) {
+  const colors = useThemeColors();
+  const amber = colors.amberDefault;
   const insets = useSafeAreaInsets();
   const isLeave = visualVariant === 'leave';
+
+  const s = useMemo(
+    () =>
+      StyleSheet.create({
+        root: {
+          flex: 1,
+          justifyContent: 'flex-end',
+        },
+        overlay: {
+          backgroundColor: 'rgba(0,0,0,0.65)',
+        },
+        sheet: {
+          backgroundColor: '#1D1D1A',
+          borderTopLeftRadius: 24,
+          borderTopRightRadius: 24,
+          borderWidth: StyleSheet.hairlineWidth,
+          borderColor: 'rgba(255,255,255,0.09)',
+          borderBottomWidth: 0,
+        },
+        handleWrap: {
+          alignItems: 'center',
+          paddingTop: 12,
+          paddingBottom: 8,
+        },
+        handleBar: {
+          width: 36,
+          height: 4,
+          borderRadius: 2,
+          backgroundColor: 'rgba(255,255,255,0.14)',
+        },
+        body: {
+          alignItems: 'center',
+          paddingHorizontal: 24,
+          paddingTop: 8,
+          paddingBottom: 20,
+        },
+        iconWrap: {
+          width: 52,
+          height: 52,
+          borderRadius: 26,
+          backgroundColor: 'rgba(224,64,64,0.1)',
+          borderWidth: StyleSheet.hairlineWidth,
+          borderColor: 'rgba(224,64,64,0.3)',
+          alignItems: 'center',
+          justifyContent: 'center',
+          marginBottom: 16,
+        },
+        iconWrapLeave: {
+          backgroundColor: 'rgba(240,160,48,0.12)',
+          borderColor: 'rgba(240,160,48,0.35)',
+        },
+        title: {
+          fontSize: 19,
+          fontWeight: '700',
+          color: '#FFFFFF',
+          letterSpacing: -0.3,
+          marginBottom: 8,
+          textAlign: 'center',
+        },
+        subtitle: {
+          fontSize: 14,
+          color: '#8BA890',
+          lineHeight: 21,
+          textAlign: 'center',
+        },
+        dangerBox: {
+          marginHorizontal: 20,
+          marginBottom: 20,
+          backgroundColor: 'rgba(224,64,64,0.07)',
+          borderRadius: 14,
+          borderWidth: StyleSheet.hairlineWidth,
+          borderColor: 'rgba(224,64,64,0.22)',
+          overflow: 'hidden',
+        },
+        dangerHeader: {
+          paddingHorizontal: 16,
+          paddingVertical: 10,
+          fontSize: 10,
+          fontWeight: '700',
+          letterSpacing: 1.2,
+          color: 'rgba(224,64,64,0.55)',
+          borderBottomWidth: StyleSheet.hairlineWidth,
+          borderBottomColor: 'rgba(224,64,64,0.15)',
+        },
+        dangerRow: {
+          flexDirection: 'row',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          paddingHorizontal: 16,
+          paddingVertical: 11,
+        },
+        dangerLabel: { fontSize: 14, color: '#606058' },
+        dangerValue: { fontSize: 14, fontWeight: '600', color: 'rgba(255,255,255,0.7)' },
+        dangerValueWrap: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+        dangerDot: { width: 6, height: 6, borderRadius: 3, backgroundColor: '#E04040' },
+        dangerValueRed: { fontSize: 14, fontWeight: '700', color: '#E04040' },
+        dangerDivider: {
+          height: StyleSheet.hairlineWidth,
+          backgroundColor: 'rgba(224,64,64,0.15)',
+          marginHorizontal: 16,
+        },
+        actions: { paddingHorizontal: 20, gap: 10 },
+        btnDelete: {
+          backgroundColor: 'rgba(224,64,64,0.18)',
+          borderRadius: 14,
+          borderWidth: StyleSheet.hairlineWidth,
+          borderColor: 'rgba(224,64,64,0.45)',
+          paddingVertical: 15,
+          alignItems: 'center',
+        },
+        btnDeleteText: {
+          fontSize: 16,
+          fontWeight: '700',
+          color: '#E87070',
+          letterSpacing: -0.2,
+        },
+        btnLeave: {
+          backgroundColor: 'rgba(240,160,48,0.16)',
+          borderRadius: 14,
+          borderWidth: StyleSheet.hairlineWidth,
+          borderColor: 'rgba(240,160,48,0.42)',
+          paddingVertical: 15,
+          alignItems: 'center',
+        },
+        btnLeaveText: {
+          fontSize: 16,
+          fontWeight: '700',
+          color: amber,
+          letterSpacing: -0.2,
+        },
+        btnCancel: {
+          backgroundColor: '#252522',
+          borderRadius: 14,
+          borderWidth: StyleSheet.hairlineWidth,
+          borderColor: 'rgba(255,255,255,0.07)',
+          paddingVertical: 14,
+          alignItems: 'center',
+        },
+        btnCancelText: { fontSize: 16, color: 'rgba(255,255,255,0.45)' },
+      }),
+    [amber]
+  );
 
   // openY drives the slide-in/out animation (CLOSED_Y → 0 on open, back on dismiss)
   const openY = useRef(new Animated.Value(CLOSED_Y)).current;
@@ -154,7 +296,7 @@ export function ConfirmDeleteSheet({
                 <Ionicons
                   name={isLeave ? 'exit-outline' : 'trash-outline'}
                   size={24}
-                  color={isLeave ? Amber : '#C05A5A'}
+                  color={isLeave ? amber : '#C05A5A'}
                 />
               </View>
               <Text style={s.title}>{title}</Text>
@@ -194,7 +336,7 @@ export function ConfirmDeleteSheet({
                 activeOpacity={0.82}
               >
                 {loading ? (
-                  <ActivityIndicator color={isLeave ? Amber : '#E87070'} />
+                  <ActivityIndicator color={isLeave ? amber : '#E87070'} />
                 ) : (
                   <Text style={isLeave ? s.btnLeaveText : s.btnDeleteText}>{confirmLabel}</Text>
                 )}
@@ -214,141 +356,3 @@ export function ConfirmDeleteSheet({
     </Modal>
   );
 }
-
-const s = StyleSheet.create({
-  root: {
-    flex: 1,
-    justifyContent: 'flex-end',
-  },
-  overlay: {
-    backgroundColor: 'rgba(0,0,0,0.65)',
-  },
-  sheet: {
-    backgroundColor: '#1D1D1A',
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: 'rgba(255,255,255,0.09)',
-    borderBottomWidth: 0,
-  },
-  handleWrap: {
-    alignItems: 'center',
-    paddingTop: 12,
-    paddingBottom: 8,
-  },
-  handleBar: {
-    width: 36,
-    height: 4,
-    borderRadius: 2,
-    backgroundColor: 'rgba(255,255,255,0.14)',
-  },
-  body: {
-    alignItems: 'center',
-    paddingHorizontal: 24,
-    paddingTop: 8,
-    paddingBottom: 20,
-  },
-  iconWrap: {
-    width: 52,
-    height: 52,
-    borderRadius: 26,
-    backgroundColor: 'rgba(224,64,64,0.1)',
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: 'rgba(224,64,64,0.3)',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 16,
-  },
-  iconWrapLeave: {
-    backgroundColor: 'rgba(240,160,48,0.12)',
-    borderColor: 'rgba(240,160,48,0.35)',
-  },
-  title: {
-    fontSize: 19,
-    fontWeight: '700',
-    color: '#FFFFFF',
-    letterSpacing: -0.3,
-    marginBottom: 8,
-    textAlign: 'center',
-  },
-  subtitle: {
-    fontSize: 14,
-    color: '#8BA890',
-    lineHeight: 21,
-    textAlign: 'center',
-  },
-  dangerBox: {
-    marginHorizontal: 20,
-    marginBottom: 20,
-    backgroundColor: 'rgba(224,64,64,0.07)',
-    borderRadius: 14,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: 'rgba(224,64,64,0.22)',
-    overflow: 'hidden',
-  },
-  dangerHeader: {
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    fontSize: 10,
-    fontWeight: '700',
-    letterSpacing: 1.2,
-    color: 'rgba(224,64,64,0.55)',
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: 'rgba(224,64,64,0.15)',
-  },
-  dangerRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 11,
-  },
-  dangerLabel: { fontSize: 14, color: '#606058' },
-  dangerValue: { fontSize: 14, fontWeight: '600', color: 'rgba(255,255,255,0.7)' },
-  dangerValueWrap: { flexDirection: 'row', alignItems: 'center', gap: 6 },
-  dangerDot: { width: 6, height: 6, borderRadius: 3, backgroundColor: '#E04040' },
-  dangerValueRed: { fontSize: 14, fontWeight: '700', color: '#E04040' },
-  dangerDivider: {
-    height: StyleSheet.hairlineWidth,
-    backgroundColor: 'rgba(224,64,64,0.15)',
-    marginHorizontal: 16,
-  },
-  actions: { paddingHorizontal: 20, gap: 10 },
-  btnDelete: {
-    backgroundColor: 'rgba(224,64,64,0.18)',
-    borderRadius: 14,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: 'rgba(224,64,64,0.45)',
-    paddingVertical: 15,
-    alignItems: 'center',
-  },
-  btnDeleteText: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: '#E87070',
-    letterSpacing: -0.2,
-  },
-  btnLeave: {
-    backgroundColor: 'rgba(240,160,48,0.16)',
-    borderRadius: 14,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: 'rgba(240,160,48,0.42)',
-    paddingVertical: 15,
-    alignItems: 'center',
-  },
-  btnLeaveText: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: Amber,
-    letterSpacing: -0.2,
-  },
-  btnCancel: {
-    backgroundColor: '#252522',
-    borderRadius: 14,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: 'rgba(255,255,255,0.07)',
-    paddingVertical: 14,
-    alignItems: 'center',
-  },
-  btnCancelText: { fontSize: 16, color: 'rgba(255,255,255,0.45)' },
-});

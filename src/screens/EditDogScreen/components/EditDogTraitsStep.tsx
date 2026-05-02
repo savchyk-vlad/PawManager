@@ -3,7 +3,7 @@ import { View, Text, TouchableOpacity } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { FormField } from "../../../components/FormField";
 import { Dog, DogTraitType } from "../../../types";
-import { colors } from "../../../theme";
+import { useThemeColors } from "../../../theme";
 
 type Styles = Record<string, object>;
 
@@ -20,6 +20,7 @@ export function EditDogTraitsStep({
   addTraitRow: () => void;
   removeTraitRow: (index: number) => void;
 }) {
+  const colors = useThemeColors();
   return (
     <View style={styles.card}>
       <Text style={styles.hint}>Add short notes like “friendly with cats” or “pulls on leash”.</Text>

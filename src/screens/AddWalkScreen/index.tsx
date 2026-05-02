@@ -1,12 +1,5 @@
 import React, { useState, useMemo, useEffect, useRef } from "react";
-import {
-  View,
-  Text,
-  TouchableOpacity,
-  StyleSheet,
-  Alert,
-  ActivityIndicator,
-} from "react-native";
+import { View, Text, TouchableOpacity, Alert, ActivityIndicator } from "react-native";
 import { FormKeyboardScrollView } from "../../components/FormKeyboardScrollView";
 import { WalkFormCloseHeader } from "../../components/WalkFormCloseHeader";
 import { WalkScheduleFields } from "../../components/WalkScheduleFields";
@@ -25,15 +18,19 @@ import { Client } from "../../types";
 import { RootStackParamList } from "../../navigation";
 import type { CreateWalkInput } from "../../lib/walksService";
 import { findOverlappingWalk } from "../../lib/schedulingOverlap";
-import { colors } from "../../theme";
-import { TimeTakenModal } from "../../components/TimeTakenModal";
+import { useThemeColors } from "../../theme";
 import { AddWalkClientSection } from "./components/AddWalkClientSection";
+import { WalkScheduleConflictModal } from "../../components/WalkScheduleConflictModal";
+import { PastTimeModal } from "../../components/PastTimeModal";
 import { AddWalkDogsSection } from "./components/AddWalkDogsSection";
+import { createAddWalkScreenStyles } from "./addWalkScreen.styles";
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
 type Route = RouteProp<RootStackParamList, "AddWalk">;
 
 export default function AddWalkScreen() {
+  const colors = useThemeColors();
+  const s = useMemo(() => createAddWalkScreenStyles(colors), [colors]);
   const navigation = useNavigation<Nav>();
   const route = useRoute<Route>();
   const insets = useSafeAreaInsets();
@@ -89,6 +86,7 @@ export default function AddWalkScreen() {
   const [dogPrices, setDogPrices] = useState<Record<string, string>>({});
   const [saving, setSaving] = useState(false);
   const [takenWalkId, setTakenWalkId] = useState<string | null>(null);
+  const [pastTimeModalVisible, setPastTimeModalVisible] = useState(false);
   const scrollRef = useRef<React.ComponentRef<
     typeof FormKeyboardScrollView
   > | null>(null);
@@ -239,10 +237,7 @@ export default function AddWalkScreen() {
     const scheduledTime = new Date(selectedTime);
     const now = new Date();
     if (scheduledTime < now) {
-      Alert.alert(
-        "Past Time Not Allowed",
-        "The scheduled time cannot be in the past. Please select a future date and time.",
-      );
+      setPastTimeModalVisible(true);
       return;
     }
 
@@ -352,75 +347,83 @@ export default function AddWalkScreen() {
           onSelectClient={selectClient}
         />
 
-        <AddWalkDogsSection
-          styles={s}
-          clientName={selectedClient?.name ?? null}
-          dogs={selectedClientActiveDogs}
-          selectedDogIds={selectedDogs}
-          onToggleDog={toggleDog}
-        />
+        {selectedClient ? (
+          <>
+            <AddWalkDogsSection
+              styles={s}
+              clientName={selectedClient?.name ?? null}
+              dogs={selectedClientActiveDogs}
+              selectedDogIds={selectedDogs}
+              onToggleDog={toggleDog}
+            />
 
-        {selectedClient && selectedDogs.length > 0 ? (
-          <WalkPricingFields
-            dogs={selectedClientActiveDogs.filter((d) =>
-              selectedDogs.includes(d.id),
-            )}
-            priceInputs={dogPrices}
-            onPriceChange={(dogId, value) =>
-              setDogPrices((prev) => ({ ...prev, [dogId]: value }))
-            }
-          />
+            {selectedClient && selectedDogs.length > 0 ? (
+              <WalkPricingFields
+                dogs={selectedClientActiveDogs.filter((d) =>
+                  selectedDogs.includes(d.id),
+                )}
+                priceInputs={dogPrices}
+                onPriceChange={(dogId, value) =>
+                  setDogPrices((prev) => ({ ...prev, [dogId]: value }))
+                }
+              />
+            ) : null}
+          </>
         ) : null}
 
-        <WalkScheduleFields
-          walks={walks}
-          selectedTime={selectedTime}
-          monthDate={monthDate}
-          duration={duration}
-          customDuration={customDuration}
-          notes={notes}
-          timePicked={hasPickedTime}
-          showNoTimeAvailableHint={!saving}
-          getTimeConflictLabel={(conflictWalk) => {
-            const c = clients.find((x) => x.id === conflictWalk.clientId);
-            const dogNames =
-              c?.dogs
-                .filter((d) => conflictWalk.dogIds.includes(d.id))
-                .map((d) => d.name)
-                .filter(Boolean) ?? [];
-            return {
-              title: "This time is already taken",
-              subtitle: [
-                c?.name ? c.name : null,
-                dogNames.length > 0 ? dogNames.join(", ") : null,
-                `${conflictWalk.durationMinutes} min`,
-              ]
-                .filter(Boolean)
-                .join(" · "),
-            };
-          }}
-          getTimeConflictDetails={(conflictWalk) => {
-            const c = clients.find((x) => x.id === conflictWalk.clientId);
-            const dogs = c?.dogs
-              .filter((d) => conflictWalk.dogIds.includes(d.id))
-              .map((d) => ({ emoji: d.emoji, name: d.name })) ?? [];
-            return { client: c?.name, dogs };
-          }}
-          onSelectedTimeChange={setSelectedTime}
-          onMonthDateChange={setMonthDate}
-          onDurationChange={setDuration}
-          onCustomDurationChange={setCustomDuration}
-          onNotesChange={setNotes}
-          onPickDate={() => setHasPickedDate(true)}
-          onPickTime={() => setHasPickedTime(true)}
-          onPickDuration={() => setHasPickedDuration(true)}
-          onNotesFocus={() => {
-            setTimeout(() => {
-              const v = scrollRef.current as { update?: () => void } | null;
-              v?.update?.();
-            }, 100);
-          }}
-        />
+        {selectedClient && selectedDogs.length > 0 ? (
+          <>
+            <WalkScheduleFields
+              walks={walks}
+              selectedTime={selectedTime}
+              monthDate={monthDate}
+              duration={duration}
+              customDuration={customDuration}
+              notes={notes}
+              timePicked={hasPickedTime}
+              showNoTimeAvailableHint={!saving}
+              getTimeConflictLabel={(conflictWalk) => {
+                const c = clients.find((x) => x.id === conflictWalk.clientId);
+                const dogNames =
+                  c?.dogs
+                    .filter((d) => conflictWalk.dogIds.includes(d.id))
+                    .map((d) => d.name)
+                    .filter(Boolean) ?? [];
+                return {
+                  title: "This time is already taken",
+                  subtitle: [
+                    c?.name ? c.name : null,
+                    dogNames.length > 0 ? dogNames.join(", ") : null,
+                    `${conflictWalk.durationMinutes} min`,
+                  ]
+                    .filter(Boolean)
+                    .join(" · "),
+                };
+              }}
+              getTimeConflictDetails={(conflictWalk) => {
+                const c = clients.find((x) => x.id === conflictWalk.clientId);
+                const dogs = c?.dogs
+                  .filter((d) => conflictWalk.dogIds.includes(d.id))
+                  .map((d) => ({ emoji: d.emoji, name: d.name })) ?? [];
+                return { client: c?.name, dogs };
+              }}
+              onSelectedTimeChange={setSelectedTime}
+              onMonthDateChange={setMonthDate}
+              onDurationChange={setDuration}
+              onCustomDurationChange={setCustomDuration}
+              onNotesChange={setNotes}
+              onPickDate={() => setHasPickedDate(true)}
+              onPickTime={() => setHasPickedTime(true)}
+              onPickDuration={() => setHasPickedDuration(true)}
+              onNotesFocus={() => {
+                setTimeout(() => {
+                  const v = scrollRef.current as { update?: () => void } | null;
+                  v?.update?.();
+                }, 100);
+              }}
+            />
+          </>
+        ) : null}
 
         {selectedClient && selectedDogs.length > 0 ? (
           <WalkPricingTotalBar
@@ -443,162 +446,18 @@ export default function AddWalkScreen() {
         </TouchableOpacity>
       </FormKeyboardScrollView>
 
-      {(() => {
-        const w = takenWalkId ? walks.find((x) => x.id === takenWalkId) : null;
-        const c = w ? clients.find((x) => x.id === w.clientId) : null;
-        const dogs =
-          w && c
-            ? c.dogs
-                .filter((d) => w.dogIds.includes(d.id))
-                .map((d) => ({ emoji: d.emoji, name: d.name }))
-            : [];
-        return w && c ? (
-          <TimeTakenModal
-            visible
-            onClose={() => setTakenWalkId(null)}
-            onViewWalk={() => {
-              setTakenWalkId(null);
-              navigation.navigate("ActiveWalk", { walkId: w.id });
-            }}
-            clientName={c.name}
-            dogs={dogs}
-            scheduledAtIso={w.scheduledAt}
-            durationMinutes={w.durationMinutes}
-          />
-        ) : null;
-      })()}
+      <WalkScheduleConflictModal
+        takenWalkId={takenWalkId}
+        walks={walks}
+        clients={clients}
+        navigation={navigation}
+        onDismiss={() => setTakenWalkId(null)}
+      />
+
+      <PastTimeModal
+        visible={pastTimeModalVisible}
+        onDismiss={() => setPastTimeModalVisible(false)}
+      />
     </View>
   );
 }
-
-const s = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: colors.bg },
-  header: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    backgroundColor: colors.greenDeep,
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-  },
-  backBtn: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: "rgba(255,255,255,0.16)",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  headerTitle: { fontSize: 16, fontWeight: "600", color: colors.text },
-  headerSpacer: { width: 36, height: 36 },
-  content: { padding: 16, paddingBottom: 48 },
-  sectionLabel: {
-    fontSize: 11,
-    fontWeight: "600",
-    letterSpacing: 1.2,
-    color: colors.textMuted,
-    marginBottom: 8,
-    marginTop: 20,
-  },
-  clientPending: {
-    fontSize: 12,
-    color: colors.greenDefault,
-    marginBottom: 8,
-    marginTop: -4,
-  },
-
-  borderedCard: {
-    backgroundColor: colors.surface,
-    borderRadius: 14,
-    overflow: "hidden",
-    borderWidth: 1,
-    borderColor: colors.border,
-  },
-  borderedCardHeader: {
-    paddingHorizontal: 18,
-    paddingVertical: 14,
-    backgroundColor: colors.surfaceHigh,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: colors.border,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-  },
-  borderedCardHeaderLabel: {
-    fontSize: 10,
-    fontWeight: "600",
-    letterSpacing: 1.2,
-    textTransform: "uppercase",
-    color: colors.textMuted,
-  },
-
-  clientRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingHorizontal: 14,
-    paddingVertical: 14,
-    gap: 12,
-    backgroundColor: colors.surface,
-  },
-  clientRowActive: { backgroundColor: colors.greenDeep },
-  rowBorder: {
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: colors.border,
-  },
-  clientInitial: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: "#252522",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  clientInitialActive: { backgroundColor: colors.greenDeep },
-  clientInitialText: {
-    fontSize: 15,
-    fontWeight: "600",
-    color: colors.textMuted,
-  },
-  clientName: {
-    fontSize: 14,
-    fontWeight: "600",
-    color: colors.text,
-    marginBottom: 2,
-  },
-  clientMeta: { fontSize: 12, color: colors.textSecondary },
-  emptyClients: { paddingHorizontal: 14, paddingVertical: 16 },
-  emptyClientsTitle: {
-    fontSize: 14,
-    fontWeight: "600",
-    color: colors.textMuted,
-    marginBottom: 4,
-  },
-  emptyClientsText: {
-    fontSize: 12,
-    color: colors.textSecondary,
-    lineHeight: 18,
-  },
-
-  checkbox: {
-    width: 22,
-    height: 22,
-    borderRadius: 6,
-    borderWidth: 1.5,
-    borderColor: colors.textMuted,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  checkboxActive: {
-    backgroundColor: colors.greenDeep,
-    borderColor: colors.greenDeep,
-  },
-
-  saveFullBtn: {
-    marginTop: 28,
-    backgroundColor: colors.greenDeep,
-    borderRadius: 14,
-    paddingVertical: 17,
-    alignItems: "center",
-  },
-  saveFullBtnText: { fontSize: 15, fontWeight: "700", color: "white" },
-});

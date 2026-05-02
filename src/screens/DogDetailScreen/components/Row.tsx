@@ -1,6 +1,6 @@
 import React from "react";
 import { Text, View } from "react-native";
-import { colors } from "../../../theme";
+import { useThemeColors } from "../../../theme";
 
 type Props = {
   label: string;
@@ -21,6 +21,7 @@ export function Row({
   notProvidedToken,
   styles,
 }: Props) {
+  const colors = useThemeColors();
   const isPlaceholder = value.toLowerCase().includes(notProvidedToken);
   return (
     <View style={[styles.infoRow, last ? { borderBottomWidth: 0 } : null]}>

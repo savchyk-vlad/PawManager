@@ -1,11 +1,11 @@
-import React, { useEffect, useRef } from "react";
+import React, {useEffect, useRef, useMemo} from "react";
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { format, isSameDay, parseISO } from "date-fns";
 import { Ionicons } from "@expo/vector-icons";
 import { isScheduledWalkPastEndTime, isWalkLateToStart } from "../../../lib/missedWalksService";
 import { WalkListCard } from "../../../components/WalkListCard";
 import { Walk, Client } from "../../../types";
-import { colors } from "../../../theme";
+import { useThemeColors, type ThemeColors } from "../../../theme";
 
 type Props = {
   selectedDate: Date | null;
@@ -32,6 +32,8 @@ export function ScheduleDayCarouselSection({
   getDogsText,
   onWalkPress,
 }: Props) {
+  const colors = useThemeColors();
+  const styles = useMemo(() => createScheduledaycarouselsectionStyles(colors), [colors]);
   const dayCarouselRef = useRef<ScrollView>(null);
   const isSwipeLockedRef = useRef(false);
 
@@ -234,7 +236,8 @@ export function ScheduleDayCarouselSection({
   );
 }
 
-const styles = StyleSheet.create({
+function createScheduledaycarouselsectionStyles(colors: ThemeColors) {
+  return StyleSheet.create({
   walksCarouselWrap: { flex: 1 },
   walksContent: { paddingHorizontal: 10, paddingBottom: 14 },
   dayLabel: {
@@ -317,3 +320,4 @@ const styles = StyleSheet.create({
   emptyIcon: { fontSize: 28, marginBottom: 8, opacity: 0.35 },
   emptyText: { fontSize: 13, color: colors.textMuted },
 });
+}

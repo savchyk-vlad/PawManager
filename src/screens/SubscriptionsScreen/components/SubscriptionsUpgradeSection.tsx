@@ -32,7 +32,7 @@ export function SubscriptionsUpgradeSection({
       <TouchableOpacity
         style={styles.upgradeBtn}
         activeOpacity={0.85}
-        onPress={() => Alert.alert("Coming soon", "Pro subscriptions will be available soon.")}>
+        onPress={() => Alert.alert("Not available yet", "Subscriptions aren't available in this build yet.")}>
         <Text style={[styles.upgradeBtnText, f && { fontFamily: "DMSans_700Bold" }]}>Upgrade Now →</Text>
       </TouchableOpacity>
     </View>

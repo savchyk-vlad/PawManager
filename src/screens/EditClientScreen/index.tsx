@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, {useState, useMemo} from "react";
 import { View, TouchableOpacity, StyleSheet, Alert, ActivityIndicator, Text } from "react-native";
 import { FormKeyboardScrollView } from "../../components/FormKeyboardScrollView";
 import { ClientFormScreenHeader } from "../../components/ClientFormScreenHeader";
@@ -8,13 +8,21 @@ import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { useAppStore } from "../../store";
 import { useAuthStore } from "../../store/authStore";
 import { RootStackParamList } from "../../navigation";
-import { colors } from "../../theme";
+import { useThemeColors, type ThemeColors } from "../../theme";
 import { EditClientInfoSection } from "./components/EditClientInfoSection";
+import { capitalizePersonOrDogName } from "../../lib/nameFormatting";
+import {
+  normalizeClientAddress,
+  clientRequiredFieldsSatisfied,
+  listMissingClientRequiredFields,
+} from "../../lib/clientAddress";
 
 type Route = RouteProp<RootStackParamList, "EditClient">;
 type Nav = NativeStackNavigationProp<RootStackParamList>;
 
 export default function EditClientScreen() {
+  const colors = useThemeColors();
+  const s = useMemo(() => createIndexStyles(colors), [colors]);
   const navigation = useNavigation<Nav>();
   const route = useRoute<Route>();
   const insets = useSafeAreaInsets();
@@ -31,16 +39,21 @@ export default function EditClientScreen() {
   const [price, setPrice] = useState(String(client.pricePerWalk));
   const [saving, setSaving] = useState(false);
 
-  const canSave = Boolean(name.trim());
+  const canSave = clientRequiredFieldsSatisfied(name, phone, address);
 
   const handleSave = async () => {
-    if (!canSave || saving) return;
+    const missing = listMissingClientRequiredFields(name, phone, address);
+    if (missing.length > 0) {
+      Alert.alert("Missing information", `Please add ${missing.join(", ")}.`);
+      return;
+    }
+    if (saving) return;
     setSaving(true);
     try {
       await updateClient(client.id, {
-        name: name.trim(),
+        name: capitalizePersonOrDogName(name),
         phone: phone.trim(),
-        address: address.trim(),
+        address: normalizeClientAddress(address),
         keyLocation: keyLocation.trim(),
         pricePerWalk: parseFloat(price) || 0,
       });
@@ -86,7 +99,7 @@ export default function EditClientScreen() {
           price={price}
           onChangeName={setName}
           onChangePhone={setPhone}
-          onChangeAddress={setAddress}
+          onChangeAddress={(patch) => setAddress((a) => ({ ...a, ...patch }))}
           onChangeKeyLocation={setKeyLocation}
           onChangePrice={setPrice}
         />
@@ -106,7 +119,8 @@ export default function EditClientScreen() {
   );
 }
 
-const s = StyleSheet.create({
+function createIndexStyles(colors: ThemeColors) {
+  return StyleSheet.create({
   safe: { flex: 1, backgroundColor: colors.bg },
 
   header: {
@@ -161,3 +175,4 @@ const s = StyleSheet.create({
   },
   saveFullBtnText: { fontSize: 15, fontWeight: "700", color: "white" },
 });
+}

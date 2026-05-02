@@ -8,7 +8,7 @@ import {
   StyleProp,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { colors } from '../theme';
+import { useThemeColors } from '../theme';
 
 type DangerZoneActionProps = {
   title?: string;
@@ -27,6 +27,7 @@ export function DangerZoneAction({
   style,
   labelStyle,
 }: DangerZoneActionProps) {
+  const colors = useThemeColors();
   return (
     <>
       <Text style={[s.label, labelStyle]}>{title}</Text>

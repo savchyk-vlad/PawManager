@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, {useState, useMemo} from "react";
 import {
   Alert,
   StyleSheet,
@@ -16,7 +16,7 @@ import { Walk } from "../../../types";
 import { walkCharge } from "../../../lib/walkMetrics";
 import { ConfirmDeleteSheet } from "../../../components/ConfirmDeleteSheet";
 import { DogEmojiStack } from "../../../components/DogEmojiStack";
-import { colors } from "../../../theme";
+import { useThemeColors, type ThemeColors } from "../../../theme";
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
 
@@ -26,6 +26,8 @@ type Props = {
 };
 
 export function MissedAlertCard({ walks, parseWalkDate }: Props) {
+  const colors = useThemeColors();
+  const styles = useMemo(() => createMissedalertcardStyles(colors), [colors]);
   const navigation = useNavigation<Nav>();
   const { clients, markMissedAsComplete, cancelWalk } = useAppStore();
   const [cancelSheetWalkId, setCancelSheetWalkId] = useState<string | null>(
@@ -198,7 +200,8 @@ export function MissedAlertCard({ walks, parseWalkDate }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
+function createMissedalertcardStyles(colors: ThemeColors) {
+  return StyleSheet.create({
   stack: { gap: 10 },
   card: {
     backgroundColor: colors.surface,
@@ -298,3 +301,4 @@ const styles = StyleSheet.create({
     color: "rgba(255,255,255,0.75)",
   },
 });
+}

@@ -1,7 +1,7 @@
 import React from "react";
 import { Text, TouchableOpacity, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { colors } from "../../../theme";
+import { useThemeColors } from "../../../theme";
 
 type Props = {
   styles: any;
@@ -14,6 +14,7 @@ export function SettingsAccountSection({
   onSignOut,
   onDelete,
 }: Props) {
+  const colors = useThemeColors();
   return (
     <>
       <Text style={[st.sectionLabel, { fontFamily: "DMSans_600SemiBold" }]}>

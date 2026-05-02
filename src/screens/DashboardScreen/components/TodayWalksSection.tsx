@@ -1,9 +1,13 @@
 import React from "react";
 import { RefreshControl, ScrollView, Text, View } from "react-native";
 import { Walk } from "../../../types";
-import { colors } from "../../../theme";
+import { useThemeColors } from "../../../theme";
 import { DashboardEmptyState } from "./DashboardEmptyState";
 import { format } from "date-fns";
+import {
+  FutureWalksAccordion,
+  type FutureWalkDayGroup,
+} from "./FutureWalksAccordion";
 
 type Props = {
   screenWidth: number;
@@ -17,8 +21,11 @@ type Props = {
   styles: any;
   renderActiveWalk: (walk: Walk) => React.ReactNode;
   renderScheduleWalk: (walk: Walk) => React.ReactNode;
+  /** When set, used for cards inside Future walks accordion (e.g. different Start behavior). */
+  renderFutureScheduleWalk?: (walk: Walk) => React.ReactNode;
   renderUpNextWalk: (walk: Walk) => React.ReactNode;
   renderMissedAlert: (walks: Walk[]) => React.ReactNode;
+  futureWalksGrouped: FutureWalkDayGroup[];
 };
 
 export function TodayWalksSection({
@@ -33,9 +40,13 @@ export function TodayWalksSection({
   styles,
   renderActiveWalk,
   renderScheduleWalk,
+  renderFutureScheduleWalk,
   renderUpNextWalk,
   renderMissedAlert,
+  futureWalksGrouped,
 }: Props) {
+  const colors = useThemeColors();
+  const hasFutureWalks = futureWalksGrouped.some((g) => g.walks.length > 0);
   const showTodayDateForScheduled = overdueWalks.length > 0 || allUpcoming.length > 0;
   const showDateUnderActive = activeWalks.length > 0 && showTodayDateForScheduled;
   const showDateAboveScheduled = activeWalks.length === 0 && showTodayDateForScheduled;
@@ -117,11 +128,32 @@ export function TodayWalksSection({
         </>
       )}
 
+      {activeWalks.length === 0 &&
+        overdueWalks.length === 0 &&
+        upNextWalks.length === 0 &&
+        allUpcoming.length === 0 &&
+        visibleMissed.length === 0 &&
+        hasFutureWalks && (
+          <DashboardEmptyState
+            title="Today's walks"
+            text="No walks scheduled today"
+            styles={styles}
+          />
+        )}
+
+      <FutureWalksAccordion
+        groups={futureWalksGrouped}
+        renderScheduleWalk={
+          renderFutureScheduleWalk ?? renderScheduleWalk
+        }
+      />
+
       {overdueWalks.length === 0 &&
         upNextWalks.length === 0 &&
         allUpcoming.length === 0 &&
         visibleMissed.length === 0 &&
-        activeWalks.length === 0 && (
+        activeWalks.length === 0 &&
+        !hasFutureWalks && (
           <DashboardEmptyState
             title="Today's walks"
             text="No walks scheduled today"

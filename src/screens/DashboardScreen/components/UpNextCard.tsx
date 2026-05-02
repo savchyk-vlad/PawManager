@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useMemo } from "react";
 import {
   Alert,
   StyleSheet,
@@ -18,7 +18,7 @@ import {
   isWalkLateToStart,
 } from "../../../lib/missedWalksService";
 import { DogEmojiStack } from "../../../components/DogEmojiStack";
-import { colors } from "../../../theme";
+import { useThemeColors, type ThemeColors } from "../../../theme";
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
 
@@ -28,6 +28,8 @@ type Props = {
 };
 
 export function UpNextCard({ walk, parseWalkDate }: Props) {
+  const colors = useThemeColors();
+  const styles = useMemo(() => createUpnextcardStyles(colors), [colors]);
   const navigation = useNavigation<Nav>();
   const { clients, startWalk } = useAppStore();
   const client = clients.find((c) => c.id === walk.clientId);
@@ -124,7 +126,8 @@ export function UpNextCard({ walk, parseWalkDate }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
+function createUpnextcardStyles(colors: ThemeColors) {
+  return StyleSheet.create({
   shell: {
     borderRadius: 18,
     overflow: "hidden",
@@ -213,3 +216,4 @@ const styles = StyleSheet.create({
     letterSpacing: 0.2,
   },
 });
+}

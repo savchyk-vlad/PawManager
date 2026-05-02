@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useMemo } from "react";
 import { View, ScrollView, StyleSheet, ActivityIndicator } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useNavigation } from "@react-navigation/native";
@@ -9,11 +9,13 @@ import {
   DMSans_600SemiBold,
   DMSans_700Bold,
 } from "@expo-google-fonts/dm-sans";
-import { colors } from "../../theme";
+import { useThemeColors, type ThemeColors } from "../../theme";
 import { GlyphBackScreenHeader } from "../../components/GlyphBackScreenHeader";
 import { HelpFaqList } from "./components/HelpFaqList";
 
 export default function HelpFAQScreen() {
+  const colors = useThemeColors();
+  const s = useMemo(() => createIndexStyles(colors), [colors]);
   const insets = useSafeAreaInsets();
   const navigation = useNavigation();
   const [fontsLoaded] = useFonts({
@@ -50,7 +52,8 @@ export default function HelpFAQScreen() {
   );
 }
 
-const s = StyleSheet.create({
+function createIndexStyles(colors: ThemeColors) {
+  return StyleSheet.create({
   safe: { flex: 1, backgroundColor: colors.bg },
   header: {
     flexDirection: "row",
@@ -94,3 +97,4 @@ const s = StyleSheet.create({
   q: { fontSize: 15, fontWeight: "600", color: colors.text, letterSpacing: -0.2 },
   a: { fontSize: 13, color: colors.textSecondary, lineHeight: 20 },
 });
+}

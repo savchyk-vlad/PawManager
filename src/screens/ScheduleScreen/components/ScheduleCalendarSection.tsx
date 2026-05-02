@@ -1,8 +1,8 @@
-import React from "react";
+import React, { useMemo } from "react";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { format, isSameDay, isToday } from "date-fns";
 import { Ionicons } from "@expo/vector-icons";
-import { colors } from "../../../theme";
+import { useThemeColors, type ThemeColors } from "../../../theme";
 
 type CalendarCell = { type: "empty" } | { type: "day"; date: Date };
 
@@ -23,6 +23,8 @@ export function ScheduleCalendarSection({
   onChangeMonth,
   onSelectDate,
 }: Props) {
+  const colors = useThemeColors();
+  const styles = useMemo(() => createSchedulecalendarsectionStyles(colors), [colors]);
   return (
     <View style={styles.calendarWrap}>
       <View style={styles.calNav}>
@@ -87,7 +89,8 @@ export function ScheduleCalendarSection({
   );
 }
 
-const styles = StyleSheet.create({
+function createSchedulecalendarsectionStyles(colors: ThemeColors) {
+  return StyleSheet.create({
   calendarWrap: {
     backgroundColor: colors.surface,
     marginHorizontal: 10,
@@ -141,3 +144,4 @@ const styles = StyleSheet.create({
   dotRow: { flexDirection: "row", gap: 2, minHeight: 5, marginTop: 3 },
   dot: { width: 4, height: 4, borderRadius: 2, backgroundColor: colors.greenDeep },
 });
+}

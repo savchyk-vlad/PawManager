@@ -1,6 +1,7 @@
 import { useMemo } from 'react';
 import {
   addDays,
+  addMinutes,
   endOfMonth,
   parseISO,
   startOfDay,
@@ -13,6 +14,9 @@ import {
 } from '../lib/schedulingOverlap';
 import { localCalendarMidnightFromIso } from '../lib/localCalendar';
 import { useSettingsStore } from '../store/settingsStore';
+
+/** Default walk time when opening Add Walk: this many minutes after the current time (today’s first slot). */
+const SCHEDULE_DEFAULT_LEAD_MINUTES = 30;
 
 /** Next schedulable start from `now` across upcoming calendar days (minute steps, respects overlaps). */
 export function nextWorkingSlotIso(now: Date, walks: Walk[]): string | null {
@@ -31,7 +35,9 @@ export function nextWorkingSlotIso(now: Date, walks: Walk[]): string | null {
       0,
     );
     const preferredIso =
-      i === 0 ? now.toISOString() : dayAtMidnight.toISOString();
+      i === 0
+        ? addMinutes(now, SCHEDULE_DEFAULT_LEAD_MINUTES).toISOString()
+        : dayAtMidnight.toISOString();
     const found = findNextAvailableStartIso({
       dayAtLocalMidnight: dayAtMidnight,
       preferredIso,

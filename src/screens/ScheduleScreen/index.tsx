@@ -23,7 +23,7 @@ import { Walk } from '../../types';
 import { RootStackParamList } from '../../navigation';
 import { WalkListCard } from '../../components/WalkListCard';
 import { chunkIntoRows, padCalendarToFullWeeks } from '../../lib/calendarWeekRows';
-import { colors } from '../../theme';
+import { useThemeColors, type ThemeColors } from '../../theme';
 import { ScheduleHeader } from './components/ScheduleHeader';
 import { ScheduleCalendarSection } from './components/ScheduleCalendarSection';
 import { ScheduleDayCarouselSection } from './components/ScheduleDayCarouselSection';
@@ -31,6 +31,8 @@ import { ScheduleDayCarouselSection } from './components/ScheduleDayCarouselSect
 type Nav = NativeStackNavigationProp<RootStackParamList>;
 
 export default function ScheduleScreen() {
+  const colors = useThemeColors();
+  const styles = useMemo(() => createIndexStyles(colors), [colors]);
   const navigation = useNavigation<Nav>();
   const insets = useSafeAreaInsets();
   const { walks, clients } = useAppStore();
@@ -175,7 +177,8 @@ export default function ScheduleScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+function createIndexStyles(colors: ThemeColors) {
+  return StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.bg },
   header: {
     paddingHorizontal: 22,
@@ -250,3 +253,4 @@ const styles = StyleSheet.create({
   dotRow: { flexDirection: 'row', gap: 2, minHeight: 5, marginTop: 3 },
   dot: { width: 4, height: 4, borderRadius: 2, backgroundColor: colors.greenDeep },
 });
+}

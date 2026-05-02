@@ -1,6 +1,8 @@
 import React from "react";
 import { View, Text } from "react-native";
+import type { ClientAddress } from "../../../types";
 import { FormField } from "../../../components/FormField";
+import { ClientAddressFormFields } from "../../../components/ClientAddressFormFields";
 
 type Styles = {
   sectionLabel: object;
@@ -24,12 +26,12 @@ export function EditClientInfoSection({
   styles: Styles;
   name: string;
   phone: string;
-  address: string;
+  address: ClientAddress;
   keyLocation: string;
   price: string;
   onChangeName: (t: string) => void;
   onChangePhone: (t: string) => void;
-  onChangeAddress: (t: string) => void;
+  onChangeAddress: (patch: Partial<ClientAddress>) => void;
   onChangeKeyLocation: (t: string) => void;
   onChangePrice: (t: string) => void;
 }) {
@@ -37,10 +39,11 @@ export function EditClientInfoSection({
     <>
       <Text style={styles.sectionLabel}>CLIENT INFO</Text>
       <View style={styles.card}>
-        <FormField label="Full Name" value={name} onChangeText={onChangeName} placeholder="Jane Smith" />
+        <FormField label="Full Name" required value={name} onChangeText={onChangeName} placeholder="Jane Smith" />
         <View style={styles.divider} />
         <FormField
           label="Phone"
+          required
           value={phone}
           onChangeText={onChangePhone}
           placeholder="(555) 000-0000"
@@ -48,12 +51,10 @@ export function EditClientInfoSection({
           autoCapitalize="none"
         />
         <View style={styles.divider} />
-        <FormField
-          label="Address"
-          value={address}
-          onChangeText={onChangeAddress}
-          placeholder="123 Main St"
-          autoCapitalize="sentences"
+        <ClientAddressFormFields
+          styles={{ divider: styles.divider }}
+          address={address}
+          onChange={onChangeAddress}
         />
         <View style={styles.divider} />
         <FormField

@@ -5,7 +5,7 @@ import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { EmptyPlaceholder } from "../../../components/EmptyPlaceholder";
 import { RootStackParamList } from "../../../navigation";
 import { Dog } from "../../../types";
-import { colors } from "../../../theme";
+import { useThemeColors } from "../../../theme";
 import { DogCard } from "./DetailPieces";
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
@@ -23,6 +23,7 @@ export function ClientDetailDogsTab({
   navigation: Nav;
   styles: Styles;
 }) {
+  const colors = useThemeColors();
   return (
     <ScrollView
       style={styles.tabPageScroll}

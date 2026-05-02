@@ -6,12 +6,11 @@ import { Ionicons } from "@expo/vector-icons";
 import { differenceInCalendarDays, isValid, parseISO } from "date-fns";
 import { RootStackParamList } from "../../../navigation";
 import { Client, Walk } from "../../../types";
+import { clientAvatarTint } from "../../../lib/clientAvatarColors";
 import { getInitials } from "../../../lib/utils";
-import { colors } from "../../../theme";
+import { useThemeColors } from "../../../theme";
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
-
-const AVATAR_COLORS = ["#1A3A24", "#2E1F3A", "#1A2A40", "#3A2810", "#1A2E2C"];
 
 function lastWalkLabel(clientId: string, walks: Walk[]): string {
   const done = walks.filter(
@@ -31,12 +30,12 @@ function lastWalkLabel(clientId: string, walks: Walk[]): string {
 
 type Props = {
   client: Client;
-  index: number;
   walks: Walk[];
   styles: any;
 };
 
-export function ClientCard({ client, index, walks, styles }: Props) {
+export function ClientCard({ client, walks, styles }: Props) {
+  const colors = useThemeColors();
   const navigation = useNavigation<Nav>();
   const activeDogs = client.dogs.filter((dog) => !dog.isDeleted);
 
@@ -45,7 +44,7 @@ export function ClientCard({ client, index, walks, styles }: Props) {
   );
   const unpaidCount = unpaidWalks.length;
   const allPaid = unpaidCount === 0;
-  const avatarBg = AVATAR_COLORS[index % AVATAR_COLORS.length];
+  const avatarTint = clientAvatarTint(client.id);
   const walkLabel = lastWalkLabel(client.id, walks);
 
   const handleCall = () => {
@@ -60,8 +59,14 @@ export function ClientCard({ client, index, walks, styles }: Props) {
       activeOpacity={0.75}>
       <View style={styles.cardTop}>
         <View style={styles.avatarWrap}>
-          <View style={[styles.avatar, { backgroundColor: avatarBg }]}>
-            <Text style={styles.avatarText}>{getInitials(client.name)}</Text>
+          <View
+            style={[
+              styles.avatar,
+              { backgroundColor: avatarTint.backgroundColor },
+            ]}>
+            <Text style={[styles.avatarText, { color: avatarTint.color }]}>
+              {getInitials(client.name)}
+            </Text>
           </View>
           <View style={styles.dot} />
         </View>

@@ -6,6 +6,7 @@ import {
 } from "@supabase/supabase-js";
 import { supabase } from "../lib/supabase";
 import { isSupabaseConfigured } from "../lib/expoEnv";
+import { fetchMembershipTier, MembershipTier } from "../lib/profileService";
 import { useSettingsStore } from "./settingsStore";
 import {
   buildMetadataPatch,
@@ -40,7 +41,9 @@ interface AuthState {
   session: Session | null;
   user: User | null;
   loading: boolean;
+  membershipTier: MembershipTier;
 
+  setMembershipTier: (tier: MembershipTier) => void;
   setSession: (session: Session | null) => void;
   signUp: (
     email: string,
@@ -65,7 +68,9 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   session: null,
   user: null,
   loading: true,
+  membershipTier: "free",
 
+  setMembershipTier: (tier) => set({ membershipTier: tier }),
   setSession: (session) => {
     const user = session?.user ?? null;
     const prevId = get().user?.id;
@@ -74,12 +79,22 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     set({ session, user, loading: false });
 
     if (!user) {
+      set({ membershipTier: "free" });
       useSettingsStore.getState().resetToDefaults();
       return;
     }
 
     if (prevId !== nextId) {
       hydrateSettingsFromUser(user);
+      void fetchMembershipTier(user.id)
+        .then((membershipTier) => {
+          if (get().user?.id !== user.id) return;
+          set({ membershipTier });
+        })
+        .catch(() => {
+          if (get().user?.id !== user.id) return;
+          set({ membershipTier: "free" });
+        });
     }
   },
 

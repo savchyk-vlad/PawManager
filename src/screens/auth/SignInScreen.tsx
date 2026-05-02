@@ -16,6 +16,7 @@ import {
 } from "../../components/auth/AuthComponents";
 import { AuthBackLink } from "../../components/auth/AuthBackLink";
 import OAuthButtons from "../../components/OAuthButtons";
+import { AuthLegalLinks } from "../../components/auth/AuthLegalLinks";
 
 type Nav = NativeStackNavigationProp<AuthStackParamList, "SignIn">;
 
@@ -103,6 +104,8 @@ export default function SignInScreen() {
           <OrDivider />
 
           <OAuthButtons onError={setError} onLoadingChange={setLoading} />
+
+          <AuthLegalLinks variant="signin" />
 
           <TouchableOpacity
             onPress={() => navigation.navigate("SignUp")}

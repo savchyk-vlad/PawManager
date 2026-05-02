@@ -1,9 +1,10 @@
 import React, { useEffect, useState } from 'react';
-import { Alert } from 'react-native';
+import { Alert, ActivityIndicator, View } from 'react-native';
+import { ScheduledAnotherDayModal } from '../../components/ScheduledAnotherDayModal';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { format, isSameDay, isValid, parseISO } from 'date-fns';
+import { format, isSameDay, isValid, parseISO } from "date-fns";
 import { getWalkWindowEndTime, isWalkLateToStart } from '../../lib/missedWalksService';
 import { useAppStore } from '../../store';
 import { RootStackParamList } from '../../navigation';
@@ -28,14 +29,21 @@ export default function ActiveWalkScreen() {
   const navigation = useNavigation<Nav>();
   const route = useRoute<Route>();
   const insets = useSafeAreaInsets();
-  const { walks, clients, finishWalk, startWalk } = useAppStore();
+  const { walks, clients, walksLoading, finishWalk, startWalk } = useAppStore();
   const [elapsed, setElapsed] = useState(0);
   const [finishConfirmVisible, setFinishConfirmVisible] = useState(false);
   const [finishing, setFinishing] = useState(false);
+  const [anotherDayModalVisible, setAnotherDayModalVisible] = useState(false);
 
   const walk = walks.find((w) => w.id === route.params.walkId);
   const isScheduled = walk?.status === 'scheduled';
   const isInProgress = walk?.status === 'in_progress';
+
+  useEffect(() => {
+    if (walksLoading) return;
+    if (walk) return;
+    navigation.navigate("Tabs", { screen: "Walks" });
+  }, [navigation, walk, walksLoading]);
 
   useEffect(() => {
     if (!isInProgress) {
@@ -58,74 +66,31 @@ export default function ActiveWalkScreen() {
     return () => clearInterval(interval);
   }, [isInProgress, walk?.startedAt, walk?.id]);
 
-  if (!walk) return null;
-
-  if (walk.status === 'done') {
-    const clientRow = clients.find((c) => c.id === walk.clientId);
-    const dogsRow = clientRow
-      ? clientRow.dogs.filter((d) => walk.dogIds.includes(d.id))
-      : [];
-    return (
-      <CompletedWalkView
-        walk={walk}
-        clientRow={clientRow}
-        dogsRow={dogsRow}
-        topInset={insets.top}
-        bottomInset={insets.bottom}
-        onBack={() => navigation.goBack()}
-        onOpenDog={(dogId) =>
-          clientRow
-            ? navigation.navigate("DogDetail", {
-                clientId: clientRow.id,
-                dogId,
-                allowDelete: false,
-              })
-            : undefined
-        }
-      />
-    );
-  }
-
-  if (walk.status === 'cancelled') {
-    const clientRow = clients.find((c) => c.id === walk.clientId);
-    const dogsRow = clientRow
-      ? clientRow.dogs.filter((d) => walk.dogIds.includes(d.id))
-      : [];
-    return (
-      <CancelledWalkView
-        walk={walk}
-        clientRow={clientRow}
-        dogsRow={dogsRow}
-        topInset={insets.top}
-        bottomInset={insets.bottom}
-        onBack={() => navigation.goBack()}
-      />
-    );
+  if (!walk) {
+    if (walksLoading) {
+      return (
+        <View
+          style={{
+            flex: 1,
+            alignItems: 'center',
+            justifyContent: 'center',
+            backgroundColor: '#0e0e0c',
+          }}>
+          <ActivityIndicator color="#5CAF72" />
+        </View>
+      );
+    }
+    return null;
   }
 
   const client = clients.find((c) => c.id === walk.clientId);
-  if (!client) return null;
-
-  const dogs = client.dogs.filter((d) => walk.dogIds.includes(d.id));
+  const dogs = client ? client.dogs.filter((d) => walk.dogIds.includes(d.id)) : [];
   const dog = dogs[0];
 
-  const scheduledAtParsed = walk.scheduledAt ? parseISO(walk.scheduledAt) : null;
-  const scheduleWhen =
-    scheduledAtParsed && isValid(scheduledAtParsed)
-      ? format(scheduledAtParsed, "EEE, MMM d '.' h:mm a")
-      : '—';
-
-  const isLateToStart = isWalkLateToStart(walk);
-  const windowEnd = getWalkWindowEndTime(walk);
-  const endTimeLabel =
-    windowEnd && isValid(windowEnd) ? format(windowEnd, "h:mm a '.' MMM d") : '—';
-
   const handleStartWalk = async () => {
-    if (!isSameDay(parseISO(walk.scheduledAt), new Date())) {
-      Alert.alert(
-        'Scheduled for another day',
-        'This walk can be started on its scheduled day, or reschedule the walk for today.'
-      );
+    const scheduled = walk.scheduledAt ? parseISO(walk.scheduledAt) : null;
+    if (scheduled && isValid(scheduled) && !isSameDay(scheduled, new Date())) {
+      setAnotherDayModalVisible(true);
       return;
     }
     try {
@@ -140,32 +105,79 @@ export default function ActiveWalkScreen() {
   const confirmFinish = async () => {
     if (finishing) return;
     setFinishing(true);
-    try {
-      await finishWalk(walk.id);
-      setFinishConfirmVisible(false);
-    } catch (error: any) {
-      Alert.alert('Error', error?.message ?? 'Could not finish walk.');
+    setFinishConfirmVisible(false);
+            try {
+              await finishWalk(walk.id);
+            } catch (error: any) {
+              Alert.alert('Error', error?.message ?? 'Could not finish walk.');
     } finally {
       setFinishing(false);
     }
   };
 
+  let content: React.ReactNode = null;
+  let billingTotal = 0;
+
+  if (walk.status === 'done') {
+    content = (
+      <CompletedWalkView
+        walk={walk}
+        clientRow={client}
+        dogsRow={dogs}
+        topInset={insets.top}
+        bottomInset={insets.bottom}
+        onBack={() => navigation.goBack()}
+        onOpenDog={(dogId) =>
+          client
+            ? navigation.navigate("DogDetail", {
+                clientId: client.id,
+                dogId,
+                allowDelete: false,
+              })
+            : undefined
+        }
+      />
+    );
+    billingTotal = walkCharge(walk, client);
+  } else if (walk.status === 'cancelled') {
+    content = (
+      <CancelledWalkView
+        walk={walk}
+        clientRow={client}
+        dogsRow={dogs}
+        topInset={insets.top}
+        bottomInset={insets.bottom}
+        onBack={() => navigation.goBack()}
+      />
+    );
+    billingTotal = walkCharge(walk, client);
+  } else if (client) {
+    const scheduledAtParsed = walk.scheduledAt ? parseISO(walk.scheduledAt) : null;
+    const scheduleWhen =
+      scheduledAtParsed && isValid(scheduledAtParsed)
+        ? format(scheduledAtParsed, "EEE, MMM d '.' h:mm a")
+        : '—';
+
+    const isLateToStart = isWalkLateToStart(walk);
+    const windowEnd = getWalkWindowEndTime(walk);
+    const endTimeLabel =
+      windowEnd && isValid(windowEnd) ? format(windowEnd, "h:mm a '.' MMM d") : '—';
+
   const notesText = [
-    client.keyLocation && `Client notes: ${client.keyLocation}`,
+      client.keyLocation && `Client notes: ${client.keyLocation}`,
     dog?.medical && dog.medical,
     dog?.vet && `Vet: ${dog.vet}${dog.vetPhone ? ` (${dog.vetPhone})` : ''}`,
-  ]
-    .filter(Boolean)
-    .join('\n');
+    ]
+      .filter(Boolean)
+      .join('\n');
 
-  const billingTotal = walkCharge(walk, client);
+    billingTotal = walkCharge(walk, client);
   const walkPerDogMap = walk.perDogPrices;
   const billingUsesPerDog =
     walkPerDogMap != null && Object.keys(walkPerDogMap).length > 0;
   const billingDogCount = walkDogCount(walk);
 
-  return (
-    <>
+    content = (
       <ActiveWalkMainView
         walk={walk}
         client={client}
@@ -195,12 +207,27 @@ export default function ActiveWalkScreen() {
           })
         }
       />
+    );
+  }
+
+  return (
+    <>
+      {content}
+
+      <ScheduledAnotherDayModal
+        visible={anotherDayModalVisible}
+        onDismiss={() => setAnotherDayModalVisible(false)}
+        onReschedule={() => {
+          setAnotherDayModalVisible(false);
+          navigation.navigate('EditWalk', { walkId: walk.id });
+        }}
+      />
 
       <FinishWalkSheet
         visible={finishConfirmVisible}
         elapsedSeconds={elapsed}
         plannedMinutes={walk.durationMinutes}
-        clientName={client.name}
+        clientName={client?.name ?? '—'}
         dogsLabel={dogs.length > 1 ? 'Dogs' : 'Dog'}
         dogsValue={
           dogs.length <= 1

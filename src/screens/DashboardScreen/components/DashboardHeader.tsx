@@ -1,6 +1,6 @@
 import React from "react";
 import { View } from "react-native";
-import { colors } from "../../../theme";
+import { useThemeColors } from "../../../theme";
 
 type Props = {
   insetTop: number;
@@ -9,6 +9,7 @@ type Props = {
 };
 
 export function DashboardHeader({ insetTop, children, styles }: Props) {
+  const colors = useThemeColors();
   return (
     <>
       <View style={{ height: insetTop, backgroundColor: colors.greenDeep }} />

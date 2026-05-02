@@ -1,5 +1,6 @@
 export type WalkStatus = 'scheduled' | 'in_progress' | 'done' | 'cancelled';
 export type PaymentStatus = 'unpaid' | 'paid' | 'no_pay';
+export type PaymentMethod = 'cash' | 'venmo' | 'zelle' | 'card' | string;
 export type DogTraitType = 'positive' | 'warning' | 'red';
 
 export interface Dog {
@@ -16,10 +17,19 @@ export interface Dog {
   isDeleted?: boolean;
 }
 
+/** Structured mailing-style address (US-oriented). `line2` = apt / unit (optional). */
+export interface ClientAddress {
+  line1: string;
+  line2: string;
+  city: string;
+  state: string;
+  postal: string;
+}
+
 export interface Client {
   id: string;
   name: string;
-  address: string;
+  address: ClientAddress;
   phone: string;
   pricePerWalk: number;
   keyLocation: string;
@@ -34,6 +44,7 @@ export interface Walk {
   durationMinutes: number;
   status: WalkStatus;
   paymentStatus: PaymentStatus;
+  paymentMethod?: PaymentMethod;
   /** When set, billing uses this $/walk unit for every dog (uniform custom rate). Ignored if `perDogPrices` is set. */
   pricePerWalkOverride?: number;
   /** When set (non-empty), each dog id maps to its billable $ for this walk; total is the sum over unique dogs on the walk. */

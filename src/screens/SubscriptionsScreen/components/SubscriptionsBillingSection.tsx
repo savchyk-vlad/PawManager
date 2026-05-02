@@ -28,7 +28,7 @@ export function SubscriptionsBillingSection({
       <View style={styles.divider} />
       <TouchableOpacity
         style={styles.row}
-        onPress={() => Alert.alert("Coming soon", "Payment methods will be available with Pro.")}
+        onPress={() => Alert.alert("Not available yet", "Payment methods aren't available in this build yet.")}
         activeOpacity={0.75}>
         <View>
           <Text style={[styles.rowLabel, f && { fontFamily: "DMSans_500Medium" }]}>Payment method</Text>
@@ -39,7 +39,7 @@ export function SubscriptionsBillingSection({
       <View style={styles.divider} />
       <TouchableOpacity
         style={styles.row}
-        onPress={() => Alert.alert("Coming soon", "Invoices will be available with Pro.")}
+        onPress={() => Alert.alert("Not available yet", "Invoices aren't available in this build yet.")}
         activeOpacity={0.75}>
         <Text style={[styles.rowLabel, f && { fontFamily: "DMSans_500Medium" }]}>Invoices</Text>
         <View style={styles.rowRight}>

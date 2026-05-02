@@ -10,13 +10,15 @@ import {
   DMSans_600SemiBold,
   DMSans_700Bold,
 } from "@expo-google-fonts/dm-sans";
-import { colors } from "../../theme";
+import { useThemeColors, type ThemeColors } from "../../theme";
 import { GlyphBackScreenHeader } from "../../components/GlyphBackScreenHeader";
 import { FeedbackBody } from "./components/FeedbackBody";
 
 const FEEDBACK_EMAIL = "support@pawmanager.app";
 
 export default function FeedbackScreen() {
+  const colors = useThemeColors();
+  const s = useMemo(() => createIndexStyles(colors), [colors]);
   const insets = useSafeAreaInsets();
   const navigation = useNavigation();
   const [fontsLoaded] = useFonts({
@@ -82,7 +84,8 @@ export default function FeedbackScreen() {
   );
 }
 
-const s = StyleSheet.create({
+function createIndexStyles(colors: ThemeColors) {
+  return StyleSheet.create({
   safe: { flex: 1, backgroundColor: colors.bg },
   header: {
     flexDirection: "row",
@@ -136,3 +139,4 @@ const s = StyleSheet.create({
   metaLabel: { fontSize: 13, color: colors.text },
   metaHint: { fontSize: 12, color: colors.textSecondary },
 });
+}

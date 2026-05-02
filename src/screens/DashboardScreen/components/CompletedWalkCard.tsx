@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { Platform, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -14,7 +14,7 @@ import {
 } from '../../../lib/walkMetrics';
 import { DogEmojiStack } from '../../../components/DogEmojiStack';
 import { PaymentStatusPill } from '../../../components/PaymentStatusPill';
-import { colors } from '../../../theme';
+import { useThemeColors, type ThemeColors } from '../../../theme';
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
 
@@ -24,6 +24,8 @@ type Props = {
 };
 
 export function CompletedWalkCard({ walk, parseWalkDate }: Props) {
+  const colors = useThemeColors();
+  const styles = useMemo(() => createCompletedwalkcardStyles(colors), [colors]);
   const navigation = useNavigation<Nav>();
   const { clients } = useAppStore();
   const client = clients.find((c) => c.id === walk.clientId);
@@ -98,7 +100,8 @@ export function CompletedWalkCard({ walk, parseWalkDate }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
+function createCompletedwalkcardStyles(colors: ThemeColors) {
+  return StyleSheet.create({
   card: {
     backgroundColor: '#222220',
     borderRadius: 16,
@@ -202,3 +205,4 @@ const styles = StyleSheet.create({
     letterSpacing: -0.3,
   },
 });
+}

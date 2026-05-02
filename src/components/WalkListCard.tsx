@@ -1,6 +1,6 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { StyleSheet, Text, TouchableOpacity, View, TextStyle, ViewStyle } from 'react-native';
-import { colors } from '../theme';
+import { useThemeColors } from '../theme';
 
 type Props = {
   title: string;
@@ -23,6 +23,44 @@ export function WalkListCard({
   avatarStyle,
   statusStyle,
 }: Props) {
+  const colors = useThemeColors();
+  const s = useMemo(
+    () =>
+      StyleSheet.create({
+        walkCard: {
+          flexDirection: 'row',
+          alignItems: 'center',
+          gap: 10,
+          minHeight: 56,
+          paddingHorizontal: 12,
+          paddingVertical: 12,
+          borderBottomWidth: StyleSheet.hairlineWidth,
+          borderBottomColor: colors.border,
+        },
+        walkCardLast: { borderBottomWidth: 0 },
+        avatar: {
+          width: 38,
+          height: 38,
+          borderRadius: 19,
+          backgroundColor: colors.greenDeep,
+          alignItems: 'center',
+          justifyContent: 'center',
+        },
+        avatarText: { color: colors.greenText, fontSize: 12, fontWeight: '700' },
+        walkInfo: { flex: 1, minWidth: 0 },
+        walkName: { color: colors.text, fontSize: 15, fontWeight: '600' },
+        walkMeta: { color: colors.textSecondary, fontSize: 13, marginTop: 2 },
+        statusPill: {
+          fontSize: 11,
+          fontWeight: '700',
+          paddingHorizontal: 10,
+          paddingVertical: 6,
+          borderRadius: 999,
+          overflow: 'hidden',
+        },
+      }),
+    [colors],
+  );
   return (
     <TouchableOpacity
       style={[s.walkCard, isLast && s.walkCardLast]}
@@ -42,36 +80,3 @@ export function WalkListCard({
     </TouchableOpacity>
   );
 }
-
-const s = StyleSheet.create({
-  walkCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-    paddingHorizontal: 10,
-    paddingVertical: 10,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: colors.border,
-  },
-  walkCardLast: { borderBottomWidth: 0 },
-  avatar: {
-    width: 34,
-    height: 34,
-    borderRadius: 17,
-    backgroundColor: colors.greenDeep,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  avatarText: { color: colors.greenText, fontSize: 11, fontWeight: '700' },
-  walkInfo: { flex: 1, minWidth: 0 },
-  walkName: { color: colors.text, fontSize: 14, fontWeight: '600' },
-  walkMeta: { color: colors.textSecondary, fontSize: 12, marginTop: 2 },
-  statusPill: {
-    fontSize: 10,
-    fontWeight: '700',
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 999,
-    overflow: 'hidden',
-  },
-});

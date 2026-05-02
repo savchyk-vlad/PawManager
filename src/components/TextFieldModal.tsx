@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from "react";
+import React, {useEffect, useRef, useMemo} from "react";
 import {
   View,
   Text,
@@ -12,7 +12,7 @@ import {
   Platform,
   type TextInputProps,
 } from "react-native";
-import { colors } from "../theme";
+import { useThemeColors, type ThemeColors } from "../theme";
 
 export type TextFieldModalProps = {
   visible: boolean;
@@ -58,6 +58,8 @@ export function TextFieldModal({
   textInputProps,
   animationType = "fade",
 }: TextFieldModalProps) {
+  const colors = useThemeColors();
+  const s = useMemo(() => createTextfieldmodalStyles(colors), [colors]);
   const inputRef = useRef<TextInput>(null);
   const f = useDmSans;
 
@@ -139,7 +141,8 @@ export function TextFieldModal({
   );
 }
 
-const s = StyleSheet.create({
+function createTextfieldmodalStyles(colors: ThemeColors) {
+  return StyleSheet.create({
   wrap: {
     flex: 1,
     justifyContent: "center",
@@ -223,3 +226,4 @@ const s = StyleSheet.create({
     color: colors.greenText,
   },
 });
+}

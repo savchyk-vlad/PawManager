@@ -9,8 +9,9 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { Client, Dog, Walk } from "../../../types";
-import { colors } from "../../../theme";
+import { useThemeColors, type ThemeColors } from "../../../theme";
 import { effectivePricePerWalk } from "../../../lib/walkMetrics";
+import { formatClientAddressSingleLine, formatClientAddressMultiline } from "../../../lib/clientAddress";
 import { ActiveWalkTopBar } from "./ActiveWalkTopBar";
 
 type Props = {
@@ -46,46 +47,6 @@ function parseElapsedSeconds(label: string): number {
   return Math.max(0, m * 60 + s);
 }
 
-function Card({
-  title,
-  children,
-  last,
-}: {
-  title: string;
-  children: React.ReactNode;
-  last?: boolean;
-}) {
-  return (
-    <View style={[s.card, last && s.cardLast]}>
-      <View style={s.cardHead}>
-        <Text style={s.cardHeadText}>{title}</Text>
-      </View>
-      {children}
-    </View>
-  );
-}
-
-function Row({
-  label,
-  value,
-  empty,
-  last,
-}: {
-  label: string;
-  value: string;
-  empty?: boolean;
-  last?: boolean;
-}) {
-  return (
-    <View style={[s.row, last && s.rowLast]}>
-      <Text style={s.rl}>{label}</Text>
-      <Text style={[s.rv, empty && s.rvEmpty]} numberOfLines={2}>
-        {value}
-      </Text>
-    </View>
-  );
-}
-
 export function ActiveWalkMainView({
   walk,
   client,
@@ -109,6 +70,49 @@ export function ActiveWalkMainView({
   onFinishWalk,
   onOpenDog,
 }: Props) {
+  const colors = useThemeColors();
+  const s = useMemo(() => createActiveWalkMainViewStyles(colors), [colors]);
+
+  function Card({
+    title,
+    children,
+    last,
+  }: {
+    title: string;
+    children: React.ReactNode;
+    last?: boolean;
+  }) {
+    return (
+      <View style={[s.card, last && s.cardLast]}>
+        <View style={s.cardHead}>
+          <Text style={s.cardHeadText}>{title}</Text>
+        </View>
+        {children}
+      </View>
+    );
+  }
+
+  function Row({
+    label,
+    value,
+    empty,
+    last,
+  }: {
+    label: string;
+    value: string;
+    empty?: boolean;
+    last?: boolean;
+  }) {
+    return (
+      <View style={[s.row, last && s.rowLast]}>
+        <Text style={s.rl}>{label}</Text>
+        <Text style={[s.rv, empty && s.rvEmpty]} numberOfLines={2}>
+          {value}
+        </Text>
+      </View>
+    );
+  }
+
   const plannedSeconds = Math.max(1, walk.durationMinutes) * 60;
   const elapsedSeconds = isInProgress ? parseElapsedSeconds(elapsedLabel) : 0;
   const overtime = isInProgress && elapsedSeconds > plannedSeconds;
@@ -160,9 +164,12 @@ export function ActiveWalkMainView({
             <Text style={s.actionTxt}>Call Owner</Text>
           </TouchableOpacity>
           <TouchableOpacity
-            style={s.actionBtn}
+            style={[s.actionBtn, !formatClientAddressSingleLine(client.address).trim() && { opacity: 0.45 }]}
+            disabled={!formatClientAddressSingleLine(client.address).trim()}
             onPress={() => {
-              const addr = encodeURIComponent(client.address);
+              const line = formatClientAddressSingleLine(client.address).trim();
+              if (!line) return;
+              const addr = encodeURIComponent(line);
               Linking.openURL(`maps://maps.google.com/maps?daddr=${addr}`);
             }}
             activeOpacity={0.85}
@@ -206,8 +213,8 @@ export function ActiveWalkMainView({
           />
           <Row
             label="Address"
-            value={client.address.trim() || "—"}
-            empty={!client.address.trim()}
+            value={formatClientAddressMultiline(client.address).trim() || "—"}
+            empty={!formatClientAddressSingleLine(client.address).trim()}
             last
           />
         </Card>
@@ -273,7 +280,8 @@ export function ActiveWalkMainView({
   );
 }
 
-const s = StyleSheet.create({
+function createActiveWalkMainViewStyles(colors: ThemeColors) {
+  return StyleSheet.create({
   safe: { flex: 1, backgroundColor: colors.bg },
   scroll: { paddingTop: 10 },
 
@@ -409,3 +417,4 @@ const s = StyleSheet.create({
   },
   lateNoticeText: { flex: 1, fontSize: 12, color: colors.textSecondary, lineHeight: 16 },
 });
+}

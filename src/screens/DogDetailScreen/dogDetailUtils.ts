@@ -1,9 +1,9 @@
 import { format, isToday, parseISO, isValid } from "date-fns";
 import { DogTraitType } from "../../types";
 import { Walk } from "../../types";
-import { colors } from "../../theme";
+import type { ThemeColors } from "../../theme";
 
-export function traitPillStyle(type: DogTraitType) {
+export function traitPillStyle(type: DogTraitType, colors: ThemeColors) {
   if (type === "positive") {
     return { bg: colors.greenSubtle, color: colors.greenDefault };
   }

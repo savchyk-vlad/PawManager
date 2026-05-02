@@ -20,8 +20,13 @@ import { useAppStore } from "../../store";
 import { useAuthStore } from "../../store/authStore";
 import { RootStackParamList } from "../../navigation";
 import { Dog, DogTraitType } from "../../types";
-import { colors } from "../../theme";
-import { EDIT_DOG_FOOTER_SCROLL_PADDING, EDIT_DOG_STEPS } from "./editDogConstants";
+import { useThemeColors, type ThemeColors } from "../../theme";
+import {
+  EDIT_DOG_FOOTER_SCROLL_PADDING,
+  EDIT_DOG_STEPS,
+  EDIT_DOG_TRAITS_EXTRA_HEIGHT,
+  EDIT_DOG_TRAITS_EXTRA_SCROLL,
+} from "./editDogConstants";
 import { EditDogBasicsStep } from "./components/EditDogBasicsStep";
 import { EditDogPhysicalStep } from "./components/EditDogPhysicalStep";
 import { EditDogTraitsStep } from "./components/EditDogTraitsStep";
@@ -50,6 +55,8 @@ function emptyDog(): Omit<Dog, "id"> {
 }
 
 export default function EditDogScreen() {
+  const colors = useThemeColors();
+  const s = useMemo(() => createIndexStyles(colors), [colors]);
   const navigation = useNavigation<Nav>();
   const route = useRoute<Route>();
   const insets = useSafeAreaInsets();
@@ -216,11 +223,21 @@ export default function EditDogScreen() {
                 style={{ flex: 1 }}
                 contentContainerStyle={[
                   s.content,
-                  { paddingBottom: EDIT_DOG_FOOTER_SCROLL_PADDING + insets.bottom + 8 },
+                  {
+                    paddingBottom:
+                      EDIT_DOG_FOOTER_SCROLL_PADDING +
+                      insets.bottom +
+                      8 +
+                      (pageIndex === 2 && keyboardBottomInset > 0 ? 24 : 0),
+                  },
                 ]}
                 showsVerticalScrollIndicator={false}
                 smoothKeyboardHide
-                extraScrollHeight={56}>
+                keyboardOpeningTime={pageIndex === 2 ? 280 : 250}
+                extraScrollHeight={
+                  pageIndex === 2 ? EDIT_DOG_TRAITS_EXTRA_SCROLL : 56
+                }
+                extraHeight={pageIndex === 2 ? EDIT_DOG_TRAITS_EXTRA_HEIGHT : 75}>
                 {pageIndex === 0 && <EditDogBasicsStep draft={draft} setDraft={setDraft} styles={s} />}
                 {pageIndex === 1 && (
                   <EditDogPhysicalStep
@@ -286,7 +303,8 @@ export default function EditDogScreen() {
   );
 }
 
-const s = StyleSheet.create({
+function createIndexStyles(colors: ThemeColors) {
+  return StyleSheet.create({
   safe: { flex: 1, backgroundColor: colors.bg },
   body: { flex: 1, position: "relative" },
   header: {
@@ -454,3 +472,4 @@ const s = StyleSheet.create({
   },
   primaryBtnText: { fontSize: 16, fontWeight: "700", color: colors.text },
 });
+}

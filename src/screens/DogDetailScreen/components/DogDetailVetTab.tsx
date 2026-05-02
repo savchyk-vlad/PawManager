@@ -2,7 +2,7 @@ import React from "react";
 import { View, Text, ScrollView, TouchableOpacity, Linking } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { Dog } from "../../../types";
-import { colors } from "../../../theme";
+import { useThemeColors } from "../../../theme";
 import { Row } from "./Row";
 
 type FontSet = {
@@ -27,6 +27,7 @@ export function DogDetailVetTab({
   styles: Styles;
   screenW: number;
 }) {
+  const colors = useThemeColors();
   return (
     <View style={[styles.page, { width: screenW }]}>
       <ScrollView

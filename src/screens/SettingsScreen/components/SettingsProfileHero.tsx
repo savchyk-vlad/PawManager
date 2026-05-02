@@ -1,10 +1,12 @@
 import React from "react";
-import { Text, TouchableOpacity, View } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
-import { colors } from "../../../theme";
+import { Animated, Text, TouchableOpacity, View } from "react-native";
 
 type Props = {
   styles: any;
+  identityAnimatedStyle: any;
+  subtitleAnimatedStyle: any;
+  statsAnimatedStyle: any;
+  headerAnimatedStyle: any;
   initials: string;
   fullName: string;
   onOpenNameModal: () => void;
@@ -18,6 +20,10 @@ type Props = {
 
 export function SettingsProfileHero({
   styles: st,
+  identityAnimatedStyle,
+  subtitleAnimatedStyle,
+  statsAnimatedStyle,
+  headerAnimatedStyle,
   initials,
   fullName,
   onOpenNameModal,
@@ -30,39 +36,20 @@ export function SettingsProfileHero({
 }: Props) {
   return (
     <View style={st.profileHero}>
-      <View style={st.profileBanner}>
-        <View style={st.profileBannerInner}>
-          <View style={st.avatarWrap}>
-            <View style={st.avatarCircle}>
-              <Text style={[st.avatarLetter, { fontFamily: "DMSans_700Bold" }]}>
-                {initials}
-              </Text>
-            </View>
-
-            <TouchableOpacity
-              style={st.avatarEdit}
-              onPress={onOpenNameModal}
-              activeOpacity={0.85}
-              hitSlop={{
-                top: 8,
-                bottom: 8,
-                left: 8,
-                right: 8,
-              }}
-            />
-          </View>
-          <View style={st.heroTitleCol}>
-            <Text style={[st.profileName, { fontFamily: "DMSans_700Bold" }]} numberOfLines={1}>
-              {fullName}
+      <Animated.View style={[st.profileHeaderShell, headerAnimatedStyle]}>
+        <View style={st.profileHeaderTopRow}>
+          <View style={st.profileHeaderLeft}>
+            <Text style={[st.profileHeaderTitle, { fontFamily: "DMSans_700Bold" }]}>
+              Profile
             </Text>
-            <Text style={[st.profileEmail, { fontFamily: "DMSans_400Regular" }]} numberOfLines={1}>
-              {email}
-            </Text>
-            {savingFullName ? (
-              <Text style={[st.heroSaving, { fontFamily: "DMSans_400Regular" }]}>
-                Saving…
-              </Text>
-            ) : null}
+            <Animated.Text
+              style={[
+                st.profileHeaderSubtitle,
+                subtitleAnimatedStyle,
+                { fontFamily: "DMSans_600SemiBold" },
+              ]}>
+              Account and defaults
+            </Animated.Text>
           </View>
           <TouchableOpacity
             style={st.editProfileBtn}
@@ -77,10 +64,29 @@ export function SettingsProfileHero({
             </Text>
           </TouchableOpacity>
         </View>
-      </View>
 
-      <View style={st.profileHeroBody}>
-        <View style={st.profileStatsRow}>
+        <Animated.View style={[st.profileIdentityRow, identityAnimatedStyle]}>
+            <View style={st.avatarCircle}>
+              <Text style={[st.avatarLetter, { fontFamily: "DMSans_700Bold" }]}>
+                {initials}
+              </Text>
+            </View>
+            <View style={st.profileIdentityBody}>
+              <Text style={[st.profileName, { fontFamily: "DMSans_700Bold" }]} numberOfLines={1}>
+                {fullName}
+              </Text>
+              <Text style={[st.profileEmail, { fontFamily: "DMSans_400Regular" }]} numberOfLines={1}>
+                {email}
+              </Text>
+              {savingFullName ? (
+                <Text style={[st.heroSaving, { fontFamily: "DMSans_400Regular" }]}>
+                  Saving…
+                </Text>
+              ) : null}
+            </View>
+          </Animated.View>
+
+        <Animated.View style={[st.profileStatsRow, statsAnimatedStyle]}>
           <View style={st.profileStatItem}>
             <Text
               style={[
@@ -99,8 +105,6 @@ export function SettingsProfileHero({
             </Text>
           </View>
 
-          <View style={st.profileStatDivider} />
-
           <View style={st.profileStatItem}>
             <Text
               style={[
@@ -117,8 +121,6 @@ export function SettingsProfileHero({
               Walks
             </Text>
           </View>
-
-          <View style={st.profileStatDivider} />
 
           <View style={st.profileStatItem}>
             <Text
@@ -137,8 +139,6 @@ export function SettingsProfileHero({
             </Text>
           </View>
 
-          <View style={st.profileStatDivider} />
-
           <View style={st.profileStatItem}>
             <Text
               style={[
@@ -155,8 +155,8 @@ export function SettingsProfileHero({
               Duration
             </Text>
           </View>
-        </View>
-      </View>
+        </Animated.View>
+      </Animated.View>
     </View>
   );
 }

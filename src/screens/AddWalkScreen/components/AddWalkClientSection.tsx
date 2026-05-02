@@ -2,7 +2,9 @@ import React from "react";
 import { View, Text, TouchableOpacity } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { Client } from "../../../types";
-import { colors } from "../../../theme";
+import { clientAvatarTint } from "../../../lib/clientAvatarColors";
+import { getInitials } from "../../../lib/utils";
+import { useThemeColors } from "../../../theme";
 
 type Styles = {
   sectionLabel: object;
@@ -38,6 +40,7 @@ export function AddWalkClientSection({
   clientMatch: { name: string; phone: string } | null;
   onSelectClient: (client: Client) => void;
 }) {
+  const colors = useThemeColors();
   return (
     <>
       <Text style={styles.sectionLabel}>CLIENTS</Text>
@@ -71,6 +74,7 @@ export function AddWalkClientSection({
                 .filter((d) => !d.isDeleted)
                 .map((d) => d.name)
                 .join(", ");
+              const tint = clientAvatarTint(client.id);
               return (
                 <TouchableOpacity
                   key={client.id}
@@ -81,13 +85,23 @@ export function AddWalkClientSection({
                   ]}
                   activeOpacity={1}
                   onPress={() => onSelectClient(client)}>
-                  <View style={[styles.clientInitial]}>
+                  <View
+                    style={[
+                      styles.clientInitial,
+                      {
+                        backgroundColor: active
+                          ? colors.greenDeep
+                          : tint.backgroundColor,
+                      },
+                    ]}>
                     <Text
                       style={[
                         styles.clientInitialText,
-                        active && { color: colors.greenDefault },
+                        {
+                          color: active ? colors.greenDefault : tint.color,
+                        },
                       ]}>
-                      {client.name[0]}
+                      {getInitials(client.name)}
                     </Text>
                   </View>
                   <View style={{ flex: 1, minWidth: 0 }}>

@@ -2,9 +2,11 @@ import React, { useMemo } from 'react';
 import { Linking, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Client, Dog, Walk } from '../../../types';
-import { colors } from '../../../theme';
+import { useThemeColors, type ThemeColors } from '../../../theme';
 import { effectivePricePerWalk, walkCharge } from '../../../lib/walkMetrics';
-import { formatWhen, paymentLabelAndColors } from '../activeWalkUtils';
+import { formatClientAddressSingleLine, formatClientAddressMultiline } from '../../../lib/clientAddress';
+import { formatWhen } from '../activeWalkUtils';
+import { PaidWithMethodPill, PaymentPill, getPaymentStatusTone } from '../../../components/PaymentBadges';
 
 type Props = {
   walk: Walk;
@@ -25,8 +27,10 @@ export function CompletedWalkView({
   onBack,
   onOpenDog,
 }: Props) {
+  const colors = useThemeColors();
+  const styles = useMemo(() => createCompletedwalkviewStyles(colors), [colors]);
   const dogCount = Math.max(1, walk.dogIds.length);
-  const pay = paymentLabelAndColors(walk.paymentStatus);
+  const pay = getPaymentStatusTone(walk.paymentStatus);
   const actual = walk.actualDurationMinutes ?? walk.durationMinutes;
   const walkTotal = walkCharge(walk, clientRow);
   const perDogMap = walk.perDogPrices;
@@ -91,7 +95,7 @@ export function CompletedWalkView({
       >
         <View style={styles.topBar}>
           <TouchableOpacity style={styles.backBtn} onPress={onBack} activeOpacity={0.85}>
-            <Ionicons name="arrow-back" size={16} color={colors.textSecondary} />
+            <Ionicons name="arrow-back" size={16} color={colors.textMuted} />
             <Text style={styles.backText}>Back</Text>
           </TouchableOpacity>
           <Text style={styles.screenLabel}>COMPLETED</Text>
@@ -109,7 +113,12 @@ export function CompletedWalkView({
           <Card title="Client information">
             <Row label="Name" value={clientRow.name} />
             <Row label="Phone" value={clientRow.phone.trim() || '—'} empty={!clientRow.phone.trim()} />
-            <Row label="Address" value={clientRow.address.trim() || '—'} empty={!clientRow.address.trim()} last />
+            <Row
+              label="Address"
+              value={formatClientAddressMultiline(clientRow.address).trim() || '—'}
+              empty={!formatClientAddressSingleLine(clientRow.address).trim()}
+              last
+            />
           </Card>
         ) : null}
 
@@ -153,8 +162,16 @@ export function CompletedWalkView({
               <Text style={styles.priceAmount}>
                 ${walkTotal.toFixed(2)} <Text style={styles.priceAmountSub}>total</Text>
               </Text>
-              <View style={[styles.payBadge, { backgroundColor: pay.bg }]}>
-                <Text style={[styles.payBadgeText, { color: pay.fg }]}>{pay.label}</Text>
+              <View style={styles.badgesCol}>
+                {walk.paymentStatus === 'paid' ? (
+                  <PaidWithMethodPill
+                    method={walk.paymentMethod}
+                    appBg
+                    style={styles.methodBadge}
+                  />
+                ) : (
+                  <PaymentPill label={pay.label} fg={pay.fg} bg={pay.bg} style={styles.payBadge} />
+                )}
               </View>
             </View>
             {clientRow &&
@@ -180,7 +197,8 @@ export function CompletedWalkView({
   );
 }
 
-const styles = StyleSheet.create({
+function createCompletedwalkviewStyles(colors: ThemeColors) {
+  return StyleSheet.create({
   safe: { flex: 1, backgroundColor: colors.bg },
   scroll: { paddingTop: 10, paddingBottom: 24 },
 
@@ -202,7 +220,7 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     borderRadius: 20,
   },
-  backText: { color: colors.textSecondary, fontSize: 13, fontWeight: '600' },
+  backText: { color: colors.textMuted, fontSize: 13, fontWeight: '600' },
   screenLabel: {
     color: colors.textMuted,
     fontSize: 11,
@@ -274,9 +292,11 @@ const styles = StyleSheet.create({
 
   priceBlock: { paddingHorizontal: 14, paddingVertical: 12 },
   priceTopRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12 },
+  badgesCol: { alignItems: 'flex-end', gap: 6, maxWidth: '48%' },
   priceAmount: { fontSize: 22, fontWeight: '700', color: colors.greenText, letterSpacing: -0.5 },
   priceAmountSub: { fontSize: 13, color: colors.textMuted, fontWeight: '400' },
   priceBreakdown: { fontSize: 12, color: colors.textMuted, marginTop: 3 },
-  payBadge: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 999 },
-  payBadgeText: { fontSize: 11, fontWeight: '700' },
+  payBadge: { borderColor: 'transparent' },
+  methodBadge: { maxWidth: '100%', borderColor: 'transparent' },
 });
+}

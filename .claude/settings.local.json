@@ -18,7 +18,9 @@
       "Bash(textutil -convert txt -stdout /Users/savchik-vl/Desktop/pawmanager/docs/pawmanager-docs.docx)",
       "Bash(sed -n '523,545p' /Users/savchik-vl/Desktop/pawmanager/src/screens/AddWalkScreen.tsx)",
       "Bash(sed -n '365,385p' /Users/savchik-vl/Desktop/pawmanager/src/screens/EditWalkScreen.tsx)",
-      "Bash(npm test *)"
+      "Bash(npm test *)",
+      "Bash(chmod +x /tmp/find_unused.sh)",
+      "Bash(bash /tmp/find_unused.sh)"
     ]
   }
 }

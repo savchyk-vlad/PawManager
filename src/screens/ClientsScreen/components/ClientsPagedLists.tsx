@@ -32,8 +32,8 @@ export function ClientsPagedLists({
   onMomentumScrollEnd: (e: { nativeEvent: { contentOffset: { x: number } } }) => void;
   styles: Styles;
 }) {
-  const renderClient = ({ item, index }: { item: Client; index: number }) => (
-    <ClientCard client={item} index={index} walks={walks} styles={styles} />
+  const renderClient = ({ item }: { item: Client }) => (
+    <ClientCard client={item} walks={walks} styles={styles} />
   );
 
   return (

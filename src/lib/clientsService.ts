@@ -7,7 +7,11 @@ interface DbClient {
   id: string;
   user_id: string;
   name: string;
-  address: string;
+  address_line1: string;
+  address_line2: string;
+  address_city: string;
+  address_state: string;
+  address_postal: string;
   phone: string;
   price_per_walk: number;
   key_location: string;
@@ -52,7 +56,13 @@ function mapClient(row: DbClient): Client {
   return {
     id: row.id,
     name: row.name,
-    address: row.address,
+    address: {
+      line1: row.address_line1 ?? '',
+      line2: row.address_line2 ?? '',
+      city: row.address_city ?? '',
+      state: row.address_state ?? '',
+      postal: row.address_postal ?? '',
+    },
     phone: row.phone,
     pricePerWalk: Number(row.price_per_walk),
     keyLocation: row.key_location ?? '',
@@ -88,7 +98,9 @@ export async function fetchClients(userId: string): Promise<Client[]> {
   const { data, error } = await supabase
     .from('clients')
     .select(`
-      id, user_id, name, address, phone, price_per_walk, key_location,
+      id, user_id, name,
+      address_line1, address_line2, address_city, address_state, address_postal,
+      phone, price_per_walk, key_location,
       dogs (
         id, client_id, name, breed, age, weight, emoji, is_deleted,
         vet, vet_phone, medical,
@@ -112,7 +124,11 @@ export async function createClient(
     .insert({
       user_id: userId,
       name: client.name,
-      address: client.address,
+      address_line1: client.address.line1,
+      address_line2: client.address.line2,
+      address_city: client.address.city,
+      address_state: client.address.state,
+      address_postal: client.address.postal,
       phone: client.phone,
       price_per_walk: client.pricePerWalk,
       key_location: client.keyLocation ?? '',
@@ -160,13 +176,23 @@ export async function deleteClient(clientId: string): Promise<void> {
 
 export async function updateClientFields(
   clientId: string,
-  fields: { name: string; address: string; phone: string; pricePerWalk: number; keyLocation: string },
+  fields: {
+    name: string;
+    address: Client['address'];
+    phone: string;
+    pricePerWalk: number;
+    keyLocation: string;
+  },
 ): Promise<void> {
   const { error } = await supabase
     .from('clients')
     .update({
       name: fields.name,
-      address: fields.address,
+      address_line1: fields.address.line1,
+      address_line2: fields.address.line2,
+      address_city: fields.address.city,
+      address_state: fields.address.state,
+      address_postal: fields.address.postal,
       phone: fields.phone,
       price_per_walk: fields.pricePerWalk,
       key_location: fields.keyLocation ?? '',

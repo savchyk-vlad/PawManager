@@ -1,10 +1,7 @@
 import React from "react";
 import { View, Text, Platform } from "react-native";
 import { Dog } from "../types";
-import { colors } from "../theme";
-
-const WALK_AVATAR_BG = colors.surfaceHigh;
-const DIVIDER = colors.border;
+import { useThemeColors } from "../theme";
 
 export type DogEmojiStackVariant =
   | "upNext"
@@ -22,6 +19,9 @@ export function DogEmojiStack({
   dogs: Pick<Dog, "id" | "emoji">[];
   variant: DogEmojiStackVariant;
 }) {
+  const colors = useThemeColors();
+  const walkAvatarBg = colors.surfaceHigh;
+  const divider = colors.border;
   const presets: Record<
     DogEmojiStackVariant,
     {
@@ -41,8 +41,8 @@ export function DogEmojiStack({
       fontSize: 32,
       step: 14,
       borderWidth: 1,
-      borderColor: DIVIDER,
-      backgroundColor: WALK_AVATAR_BG,
+      borderColor: divider,
+      backgroundColor: walkAvatarBg,
     },
     active: {
       size: 58,
@@ -60,7 +60,7 @@ export function DogEmojiStack({
       step: 11,
       borderWidth: 2,
       borderColor: "rgba(255,255,255,0.1)",
-      backgroundColor: WALK_AVATAR_BG,
+      backgroundColor: walkAvatarBg,
     },
     completed: {
       size: 48,
@@ -69,7 +69,7 @@ export function DogEmojiStack({
       step: 12,
       borderWidth: 2,
       borderColor: "rgba(255,255,255,0.1)",
-      backgroundColor: WALK_AVATAR_BG,
+      backgroundColor: walkAvatarBg,
     },
     schedule: {
       size: 24,
@@ -78,7 +78,7 @@ export function DogEmojiStack({
       step: 9,
       borderWidth: 1,
       borderColor: "rgba(255,255,255,0.1)",
-      backgroundColor: WALK_AVATAR_BG,
+      backgroundColor: walkAvatarBg,
     },
     missed: {
       size: 36,
@@ -99,7 +99,7 @@ export function DogEmojiStack({
     variant === "upNext"
       ? multi
         ? { borderWidth: p.borderWidth, borderColor: p.borderColor }
-        : { borderWidth: 1, borderColor: DIVIDER }
+        : { borderWidth: 1, borderColor: divider }
       : variant === "walkRow" || variant === "completed"
         ? multi
           ? { borderWidth: p.borderWidth, borderColor: p.borderColor }
@@ -128,7 +128,7 @@ export function DogEmojiStack({
       (variant === "walkRow" || variant === "completed" || variant === "upNext") &&
       multi
     ) {
-      backgroundColor = isFront ? WALK_AVATAR_BG : "#181A17";
+      backgroundColor = isFront ? walkAvatarBg : colors.surface;
       borderWidth = isFront ? 2 : 1;
       borderColor = isFront ? "rgba(255,255,255,0.16)" : "rgba(0,0,0,0.45)";
     }

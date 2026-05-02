@@ -1,6 +1,6 @@
 import React from "react";
 import { Text, TouchableOpacity, View } from "react-native";
-import { colors } from "../../../theme";
+import { useThemeColors } from "../../../theme";
 
 type Props = {
   doneTodayCount: number;
@@ -18,6 +18,7 @@ export function DashboardStats({
   onPressPayments,
   styles,
 }: Props) {
+  const colors = useThemeColors();
   return (
     <View style={styles.headerTopRow}>
       <Text style={styles.headerTitle}>Walks</Text>

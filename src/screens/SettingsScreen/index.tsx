@@ -1,19 +1,22 @@
 import React, { useEffect, useMemo, useState } from "react";
 import {
   View,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  StyleSheet,
   Alert,
   Platform,
   ActivityIndicator,
   Keyboard,
+  Animated,
+  NativeSyntheticEvent,
+  NativeScrollEvent,
 } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Constants from "expo-constants";
+import {
+  requestNotificationsPermissionAsync,
+  syncExpoPushTokenAsync,
+} from "../../lib/notificationsService";
 import {
   useFonts,
   DMSans_400Regular,
@@ -28,12 +31,17 @@ import { ConfirmDeleteSheet } from "../../components/ConfirmDeleteSheet";
 import { TextFieldModal } from "../../components/TextFieldModal";
 import { useSettingsStore } from "../../store/settingsStore";
 import { useAuthStore } from "../../store/authStore";
-import { colors } from "../../theme";
+import { useThemeColors } from "../../theme";
 import { SettingsProfileHero } from "./components/SettingsProfileHero";
+import { SHOW_APPEARANCE_SETTINGS } from "./settingsConstants";
+import { SettingsAppearanceSection } from "./components/SettingsAppearanceSection";
 import { SettingsBusinessSection } from "./components/SettingsBusinessSection";
 import { SettingsNotificationsSection } from "./components/SettingsNotificationsSection";
 import { SettingsSupportSection } from "./components/SettingsSupportSection";
+import { SettingsLegalSection } from "./components/SettingsLegalSection";
 import { SettingsAccountSection } from "./components/SettingsAccountSection";
+import { SettingsRatePresetChips } from "./components/SettingsRatePresetChips";
+import { createSettingsScreenStyles } from "./settingsScreen.styles";
 
 const mono = Platform.select({
   ios: "Menlo",
@@ -41,17 +49,11 @@ const mono = Platform.select({
   default: "monospace",
 });
 
-/** Common default walk rates ($) shown as quick picks in settings. */
-const DEFAULT_RATE_PRESETS = [15, 20, 25, 30, 35, 40] as const;
-
-function matchesRatePreset(draft: string, n: number): boolean {
-  const parsed = parseFloat(draft.replace(/,/g, ""));
-  return Number.isFinite(parsed) && parsed === n;
-}
-
 type Nav = NativeStackNavigationProp<RootStackParamList>;
 
 export default function SettingsScreen() {
+  const colors = useThemeColors();
+  const st = useMemo(() => createSettingsScreenStyles(colors), [colors]);
   const navigation = useNavigation<Nav>();
   const insets = useSafeAreaInsets();
 
@@ -64,25 +66,19 @@ export default function SettingsScreen() {
 
   const clients = useAppStore((st) => st.clients);
   const walks = useAppStore((st) => st.walks);
-  const FREE_LIMIT = 5;
 
   const {
     businessName,
     defaultWalkDuration,
     defaultRate,
-    reminderTiming,
     walkReminderOff,
     notificationsEnabled,
-    dailySummaryEnabled,
-    unpaidReminderEnabled,
     setBusinessName,
     setDefaultWalkDuration,
     setDefaultRate,
     setReminderTiming,
     setWalkReminderOff,
     setNotificationsEnabled,
-    setDailySummaryEnabled,
-    setUnpaidReminderEnabled,
   } = useSettingsStore();
 
   const { signOut, user, updateFullName, persistUserPrefs, deleteAccount } =
@@ -99,6 +95,7 @@ export default function SettingsScreen() {
   const [bizDraft, setBizDraft] = useState("");
   const [rateModalOpen, setRateModalOpen] = useState(false);
   const [rateDraft, setRateDraft] = useState("");
+  const headerCollapseY = useMemo(() => new Animated.Value(0), []);
 
   const fullName =
     ((user?.user_metadata?.full_name as string | undefined) ?? "").trim() ||
@@ -123,10 +120,177 @@ export default function SettingsScreen() {
   }, [businessName]);
 
   const appVersion = Constants.expoConfig?.version ?? "1.0.0";
+  const collapseDistance = 72;
+  const collapseProgress = headerCollapseY.interpolate({
+    inputRange: [0, collapseDistance],
+    outputRange: [0, 1],
+    extrapolate: "clamp",
+  });
+
+  function handleSettingsScroll(event: NativeSyntheticEvent<NativeScrollEvent>) {
+    const rawY = event.nativeEvent.contentOffset.y;
+    const nextY = Math.max(0, Math.min(collapseDistance, rawY));
+    headerCollapseY.setValue(nextY);
+  }
+
+  const headerAnimatedStyle = useMemo(
+    () => ({
+      paddingBottom: headerCollapseY.interpolate({
+        inputRange: [0, collapseDistance],
+        outputRange: [20, 12],
+        extrapolate: "clamp",
+      }),
+    }),
+    [headerCollapseY],
+  );
+
+  const subtitleAnimatedStyle = useMemo(
+    () => ({
+      opacity: collapseProgress.interpolate({
+        inputRange: [0, 0.8, 1],
+        outputRange: [1, 0.25, 0],
+        extrapolate: "clamp",
+      }),
+      transform: [
+        {
+          translateY: collapseProgress.interpolate({
+            inputRange: [0, 1],
+            outputRange: [0, -4],
+            extrapolate: "clamp",
+          }),
+        },
+      ],
+    }),
+    [collapseProgress],
+  );
+
+  const identityAnimatedStyle = useMemo(
+    () => ({
+      opacity: collapseProgress.interpolate({
+        inputRange: [0, 0.55, 1],
+        outputRange: [1, 0.22, 0],
+        extrapolate: "clamp",
+      }),
+      maxHeight: headerCollapseY.interpolate({
+        inputRange: [0, collapseDistance],
+        outputRange: [88, 0],
+        extrapolate: "clamp",
+      }),
+      marginTop: headerCollapseY.interpolate({
+        inputRange: [0, collapseDistance],
+        outputRange: [24, 0],
+        extrapolate: "clamp",
+      }),
+      paddingBottom: headerCollapseY.interpolate({
+        inputRange: [0, collapseDistance],
+        outputRange: [18, 0],
+        extrapolate: "clamp",
+      }),
+      transform: [
+        {
+          translateY: collapseProgress.interpolate({
+            inputRange: [0, 1],
+            outputRange: [0, -10],
+            extrapolate: "clamp",
+          }),
+        },
+        {
+          scale: collapseProgress.interpolate({
+            inputRange: [0, 1],
+            outputRange: [1, 0.96],
+            extrapolate: "clamp",
+          }),
+        },
+      ],
+      overflow: "hidden" as const,
+    }),
+    [headerCollapseY, collapseProgress],
+  );
+
+  const statsAnimatedStyle = useMemo(
+    () => ({
+      marginTop: headerCollapseY.interpolate({
+        inputRange: [0, collapseDistance],
+        outputRange: [18, 10],
+        extrapolate: "clamp",
+      }),
+    }),
+    [headerCollapseY],
+  );
 
   async function flushPrefsToRemote() {
     const err = await persistUserPrefs();
     if (err) Alert.alert("Couldn't save settings", err);
+  }
+
+  async function handleToggleNotifications() {
+    if (!notificationsEnabled) {
+      const granted = await requestNotificationsPermissionAsync();
+      if (!granted) {
+        Alert.alert(
+          "Notifications off",
+          "Allow notifications on your device to receive walk reminders.",
+        );
+        return;
+      }
+
+      if (user?.id) {
+        try {
+          await syncExpoPushTokenAsync(user.id, false);
+        } catch (error) {
+          Alert.alert(
+            "Notifications",
+            error instanceof Error ? error.message : "Could not enable notifications.",
+          );
+          return;
+        }
+      }
+
+      setNotificationsEnabled(true);
+      if (walkReminderOff) {
+        setWalkReminderOff(false);
+      }
+      setReminderTiming(30);
+      await flushPrefsToRemote();
+      return;
+    }
+
+    setNotificationsEnabled(false);
+    await flushPrefsToRemote();
+  }
+
+  async function handleEnableWalkReminder() {
+    if (!notificationsEnabled) {
+      const granted = await requestNotificationsPermissionAsync();
+      if (!granted) {
+        Alert.alert(
+          "Notifications off",
+          "Allow notifications on your device to receive walk reminders.",
+        );
+        return;
+      }
+      if (user?.id) {
+        try {
+          await syncExpoPushTokenAsync(user.id, false);
+        } catch (error) {
+          Alert.alert(
+            "Notifications",
+            error instanceof Error ? error.message : "Could not enable notifications.",
+          );
+          return;
+        }
+      }
+      setNotificationsEnabled(true);
+    }
+
+    setWalkReminderOff(false);
+    setReminderTiming(30);
+    await flushPrefsToRemote();
+  }
+
+  async function handleDisableWalkReminder() {
+    setWalkReminderOff(true);
+    await flushPrefsToRemote();
   }
 
   function openNameModal() {
@@ -254,7 +418,24 @@ export default function SettingsScreen() {
   }
 
   return (
-    <View style={[st.safe, { paddingTop: insets.top }]}>
+    <View style={st.safe}>
+      <View style={{ height: insets.top, backgroundColor: colors.greenDeep }} />
+      <SettingsProfileHero
+        styles={st}
+        identityAnimatedStyle={identityAnimatedStyle}
+        subtitleAnimatedStyle={subtitleAnimatedStyle}
+        statsAnimatedStyle={statsAnimatedStyle}
+        headerAnimatedStyle={headerAnimatedStyle}
+        initials={initials}
+        fullName={fullName}
+        onOpenNameModal={openNameModal}
+        savingFullName={savingFullName}
+        email={email}
+        defaultRate={defaultRate}
+        walksCount={walksCount}
+        clientsCount={clients.length}
+        defaultWalkDuration={defaultWalkDuration}
+      />
       <FormKeyboardScrollView
         layoutAnimationKey={settingsLayoutAnimationKey}
         style={{ flex: 1 }}
@@ -263,20 +444,11 @@ export default function SettingsScreen() {
           { paddingBottom: 24 + insets.bottom },
         ]}
         showsVerticalScrollIndicator={false}
+        onScroll={handleSettingsScroll}
+        scrollEventThrottle={16}
         smoothKeyboardHide
         viewIsInsideTabBar>
-        <SettingsProfileHero
-          styles={st}
-          initials={initials}
-          fullName={fullName}
-          onOpenNameModal={openNameModal}
-          savingFullName={savingFullName}
-          email={email}
-          defaultRate={defaultRate}
-          walksCount={walksCount}
-          clientsCount={clients.length}
-          defaultWalkDuration={defaultWalkDuration}
-        />
+        {SHOW_APPEARANCE_SETTINGS ? <SettingsAppearanceSection styles={st} /> : null}
 
         <SettingsBusinessSection
           styles={st}
@@ -300,15 +472,9 @@ export default function SettingsScreen() {
           fontsReady={f}
           notificationsEnabled={notificationsEnabled}
           walkReminderOff={walkReminderOff}
-          reminderTiming={reminderTiming}
-          dailySummaryEnabled={dailySummaryEnabled}
-          unpaidReminderEnabled={unpaidReminderEnabled}
-          setNotificationsEnabled={setNotificationsEnabled}
-          setWalkReminderOff={setWalkReminderOff}
-          setReminderTiming={setReminderTiming}
-          setDailySummaryEnabled={setDailySummaryEnabled}
-          setUnpaidReminderEnabled={setUnpaidReminderEnabled}
-          onPersist={flushPrefsToRemote}
+          onToggleNotifications={handleToggleNotifications}
+          onEnableWalkReminder={handleEnableWalkReminder}
+          onDisableWalkReminder={handleDisableWalkReminder}
         />
 
         <SettingsSupportSection
@@ -318,6 +484,8 @@ export default function SettingsScreen() {
           onHelp={() => navigation.navigate("HelpFAQ")}
           onFeedback={() => navigation.navigate("Feedback")}
         />
+
+        <SettingsLegalSection styles={st} />
 
         <SettingsAccountSection
           styles={st}
@@ -377,39 +545,12 @@ export default function SettingsScreen() {
           returnKeyType: "done",
         }}
         belowInput={
-          <View>
-            <Text
-              style={[
-                st.rateOptionsLabel,
-                f && { fontFamily: "DMSans_500Medium" },
-              ]}>
-              Available options
-            </Text>
-            <View style={st.rateOptionsRow}>
-              {DEFAULT_RATE_PRESETS.map((n) => {
-                const selected = matchesRatePreset(rateDraft, n);
-                return (
-                  <TouchableOpacity
-                    key={n}
-                    style={[
-                      st.rateOptionChip,
-                      selected && st.rateOptionChipActive,
-                    ]}
-                    onPress={() => setRateDraft(String(n))}
-                    activeOpacity={0.85}>
-                    <Text
-                      style={[
-                        st.rateOptionChipText,
-                        selected && st.rateOptionChipTextActive,
-                        f && { fontFamily: "DMSans_600SemiBold" },
-                      ]}>
-                      ${n}
-                    </Text>
-                  </TouchableOpacity>
-                );
-              })}
-            </View>
-          </View>
+          <SettingsRatePresetChips
+            fontsLoaded={f}
+            rateDraft={rateDraft}
+            onSelectPreset={(n: number) => setRateDraft(String(n))}
+            styles={st}
+          />
         }
       />
 
@@ -440,373 +581,3 @@ export default function SettingsScreen() {
     </View>
   );
 }
-
-const st = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: colors.bg },
-  fontFallback: { alignItems: "center" },
-  pageBody: {
-    paddingHorizontal: 12,
-    paddingBottom: 16,
-    paddingTop: 0,
-  },
-  profileHero: {
-    marginTop: 4,
-    marginBottom: 14,
-  },
-  profileBanner: {
-    height: 102,
-    borderRadius: 20,
-    backgroundColor: colors.greenDeep,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: colors.border,
-    overflow: "visible",
-  },
-  profileBannerPattern: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: "rgba(255,255,255,0.03)",
-  },
-  profileBannerInner: {
-    flex: 1,
-    paddingHorizontal: 16,
-    paddingBottom: 12,
-    flexDirection: "row",
-    alignItems: "flex-end",
-    justifyContent: "flex-start",
-    gap: 12,
-  },
-  profileHeroBody: {
-    marginTop: 14,
-    paddingHorizontal: 8,
-    alignItems: "flex-start",
-    width: "100%",
-  },
-  heroTitleCol: {
-    flex: 1,
-    minWidth: 0,
-    paddingBottom: 6,
-  },
-  avatarWrap: { position: "relative", overflow: "visible" },
-  avatarCircle: {
-    width: 68,
-    height: 68,
-    borderRadius: 34,
-    backgroundColor: colors.greenDeep,
-    borderWidth: 3,
-    borderColor: colors.bg,
-    alignItems: "center",
-    justifyContent: "center",
-    zIndex: 2,
-  },
-  avatarLetter: { fontSize: 24, fontWeight: "700", color: colors.greenText },
-
-  editProfileBtn: {
-    position: "absolute",
-    top: 12,
-    right: 16,
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 5,
-    paddingVertical: 7,
-    paddingHorizontal: 12,
-    borderRadius: 10,
-    backgroundColor: "rgba(0,0,0,0.28)",
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: colors.textSecondary,
-  },
-  editProfileBtnText: {
-    fontSize: 12,
-    color: colors.textSecondary,
-  },
-  profileName: {
-    fontSize: 18,
-    fontWeight: "600",
-    color: colors.text,
-    letterSpacing: -0.5,
-    textAlign: "left",
-    paddingVertical: 2,
-    minWidth: 0,
-  },
-  profileEmail: {
-    fontSize: 12,
-    color: "rgba(255,255,255,0.62)",
-    marginTop: 0,
-  },
-  heroSaving: { fontSize: 11, color: colors.greenText, marginTop: 4 },
-  profileStatsRow: {
-    width: "100%",
-    marginTop: 18,
-    flexDirection: "row",
-    alignItems: "stretch",
-  },
-  profileStatItem: {
-    flex: 1,
-    alignItems: "flex-start",
-    justifyContent: "center",
-    minHeight: 56,
-    paddingRight: 10,
-  },
-  profileStatDivider: {
-    width: StyleSheet.hairlineWidth,
-    backgroundColor: colors.border,
-    marginRight: 12,
-    marginLeft: 2,
-  },
-  profileStatValue: {
-    fontSize: 16,
-    lineHeight: 20,
-    color: colors.text,
-    letterSpacing: -0.3,
-  },
-  profileStatValueAccent: {
-    color: colors.greenText,
-  },
-  profileStatLabel: {
-    marginTop: 2,
-    fontSize: 10,
-    color: colors.textMuted,
-    letterSpacing: 0.4,
-  },
-  sectionLabel: {
-    fontSize: 10,
-    fontWeight: "600",
-    letterSpacing: 0.8,
-    color: colors.textMuted,
-    textTransform: "uppercase",
-    paddingHorizontal: 4,
-    marginTop: 16,
-    marginBottom: 8,
-  },
-  sectionLabelRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    gap: 8,
-    paddingRight: 2,
-  },
-  card: {
-    backgroundColor: colors.surface,
-    borderRadius: 20,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: colors.border,
-    overflow: "hidden",
-    marginBottom: 10,
-  },
-  hairline: {
-    height: StyleSheet.hairlineWidth,
-    backgroundColor: colors.border,
-    marginHorizontal: 0,
-  },
-
-  row: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingHorizontal: 16,
-    paddingVertical: 13,
-  },
-  /** Sign out / Delete account rows — taller tap area and aligned with icon size 18 */
-  accountActionRow: {
-    paddingVertical: 15,
-    minHeight: 52,
-  },
-  rowLabel: { fontSize: 13, fontWeight: "500", color: colors.text },
-  rowLabelSignOut: {
-    fontSize: 13,
-    fontWeight: "500",
-    color: colors.amberDefault,
-  },
-  rowLabelDelete: { fontSize: 13, fontWeight: "500", color: colors.redDefault },
-  rowSub: { fontSize: 11, color: colors.textMuted, marginTop: 2 },
-  rowValueWrap: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
-    maxWidth: "58%",
-  },
-  rowValueDisplay: {
-    flex: 1,
-    fontSize: 13,
-    color: colors.textMuted,
-    textAlign: "right",
-  },
-  rowValuePlaceholder: {
-    color: colors.textMuted,
-  },
-  rowChevron: { fontSize: 14, color: colors.textMuted },
-
-  comingSoonBadge: {
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    borderRadius: 8,
-    backgroundColor: "rgba(139,168,144,0.16)",
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: "rgba(139,168,144,0.45)",
-  },
-  comingSoonBadgeText: {
-    fontSize: 10,
-    fontWeight: "700",
-    color: colors.textSecondary,
-    letterSpacing: 0.35,
-    textTransform: "uppercase",
-  },
-
-  rateMono: {
-    fontSize: 13,
-    fontWeight: "600",
-    color: colors.textMuted,
-  },
-  rateWalk: { fontSize: 10, color: colors.textMuted },
-
-  rateOptionsLabel: {
-    fontSize: 11,
-    fontWeight: "600",
-    letterSpacing: 0.4,
-    color: colors.textMuted,
-    marginBottom: 8,
-  },
-  rateOptionsRow: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 8,
-  },
-  rateOptionChip: {
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-    borderRadius: 10,
-    backgroundColor: colors.surface,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: colors.border,
-  },
-  rateOptionChipActive: {
-    backgroundColor: colors.greenDeep,
-    borderColor: "rgba(126,203,90,0.3)",
-  },
-  rateOptionChipText: {
-    fontSize: 12,
-    fontWeight: "600",
-    color: colors.textMuted,
-  },
-  rateOptionChipTextActive: {
-    color: colors.greenDefault,
-  },
-
-  notifWalkReminder: {
-    paddingHorizontal: 16,
-    paddingTop: 14,
-    paddingBottom: 14,
-    gap: 10,
-  },
-  notifSubMuted: {
-    opacity: 0.45,
-  },
-  notifPillRow: { flexDirection: "row", gap: 6, width: "100%" },
-  pill: {
-    flex: 1,
-    paddingVertical: 8,
-    backgroundColor: colors.surface,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: colors.border,
-    borderRadius: 8,
-    alignItems: "center",
-  },
-  pillActive: {
-    backgroundColor: colors.greenDeep,
-    borderColor: "rgba(126,203,90,0.3)",
-  },
-  pillText: { fontSize: 11, fontWeight: "600", color: colors.textMuted },
-  pillTextActive: { color: colors.greenDefault },
-
-  track: {
-    width: 44,
-    height: 26,
-    borderRadius: 13,
-    backgroundColor: colors.surface,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: colors.border,
-    justifyContent: "center",
-    position: "relative",
-  },
-  trackOn: {
-    backgroundColor: colors.greenDeep,
-    borderColor: colors.greenDeep,
-  },
-  thumb: {
-    position: "absolute",
-    left: 3,
-    width: 20,
-    height: 20,
-    borderRadius: 10,
-    backgroundColor: "#fff",
-    shadowColor: "#000",
-    shadowOpacity: 0.4,
-    shadowRadius: 4,
-    shadowOffset: { width: 0, height: 1 },
-    elevation: 2,
-  },
-  thumbOn: {
-    transform: [{ translateX: 18 }],
-  },
-
-  subEntryCard: {
-    backgroundColor: colors.surface,
-    borderRadius: 20,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: colors.border,
-    marginBottom: 10,
-    overflow: "hidden",
-  },
-  subEntryInner: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingVertical: 13,
-    paddingHorizontal: 16,
-  },
-  subEntryLeft: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 12,
-    flex: 1,
-    minWidth: 0,
-  },
-  subIcon: {
-    width: 36,
-    height: 36,
-    borderRadius: 10,
-    backgroundColor: colors.greenDeep,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: "rgba(126,203,90,0.2)",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  subEntryName: { fontSize: 13, fontWeight: "600", color: colors.text },
-  subEntryDetail: { fontSize: 11, color: colors.textMuted, marginTop: 2 },
-  subEntryRight: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-    flexShrink: 0,
-  },
-  freeBadge: {
-    backgroundColor: "#222",
-    borderRadius: 6,
-    paddingHorizontal: 9,
-    paddingVertical: 3,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: "rgba(255,255,255,0.1)",
-  },
-  freeBadgeText: {
-    fontSize: 10,
-    fontWeight: "700",
-    color: colors.textMuted,
-    letterSpacing: 0.3,
-  },
-
-  supportVersionValue: {
-    fontSize: 12,
-    fontWeight: "500",
-    color: colors.textMuted,
-    textAlign: "right",
-    maxWidth: "42%",
-  },
-});

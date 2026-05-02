@@ -18,7 +18,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { format, isValid, parseISO } from "date-fns";
 import { enUS } from "date-fns/locale";
 import { Ionicons } from "@expo/vector-icons";
-import { colors, radius } from "../theme";
+import { useThemeColors, radius, type ThemeColors } from "../theme";
 import { Walk } from "../types";
 import { findOverlappingWalk } from "../lib/schedulingOverlap";
 
@@ -106,6 +106,36 @@ function WheelColumn({
   onChange,
   modalVisible,
 }: ColProps) {
+  const colors = useThemeColors();
+  const wheel = useMemo(
+    () =>
+      StyleSheet.create({
+        col: {
+          flex: 1,
+          height: WHEEL_VIEW_H,
+          maxWidth: 88,
+        },
+        colContent: {
+          paddingVertical: WHEEL_PAD,
+        },
+        cell: {
+          height: ROW_H,
+          justifyContent: "center",
+          alignItems: "center",
+        },
+        selected: {
+          fontSize: 20,
+          fontWeight: "600",
+          color: colors.greenDefault,
+        },
+        text: {
+          fontSize: 15,
+          fontWeight: "400",
+          color: colors.textMuted,
+        },
+      }),
+    [colors],
+  );
   const scrollRef = useRef<ScrollView>(null);
 
   useEffect(() => {
@@ -155,6 +185,8 @@ export function WalkTimePicker({
   getConflictLabel,
   getConflictDetails,
 }: Props) {
+  const colors = useThemeColors();
+  const s = useMemo(() => createWalktimepickerStyles(colors), [colors]);
   const displayDate = useMemo(() => safeDateFromIso(valueIso), [valueIso]);
   const label = format(displayDate, "h:mm a", { locale: enUS });
 
@@ -405,33 +437,8 @@ export function WalkTimePicker({
   );
 }
 
-const wheel = StyleSheet.create({
-  col: {
-    flex: 1,
-    height: WHEEL_VIEW_H,
-    maxWidth: 88,
-  },
-  colContent: {
-    paddingVertical: WHEEL_PAD,
-  },
-  cell: {
-    height: ROW_H,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  selected: {
-    fontSize: 20,
-    fontWeight: "600",
-    color: colors.greenDefault,
-  },
-  text: {
-    fontSize: 15,
-    fontWeight: "400",
-    color: colors.textMuted,
-  },
-});
-
-const s = StyleSheet.create({
+function createWalktimepickerStyles(colors: ThemeColors) {
+  return StyleSheet.create({
   wrap: { marginBottom: 12 },
   modalRoot: {
     flex: 1,
@@ -655,3 +662,4 @@ const s = StyleSheet.create({
     color: colors.greenText,
   },
 });
+}

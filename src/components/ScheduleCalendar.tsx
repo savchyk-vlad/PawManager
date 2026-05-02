@@ -4,7 +4,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { addMonths, endOfMonth, format, isSameDay, isToday, parseISO, startOfDay, subMonths } from 'date-fns';
 import { chunkIntoRows, padCalendarToFullWeeks } from '../lib/calendarWeekRows';
 import { localCalendarMidnightFromIso } from '../lib/localCalendar';
-import { colors } from '../theme';
+import { useThemeColors } from '../theme';
 
 type CalendarCell = { type: 'empty' } | { type: 'day'; date: Date };
 
@@ -27,6 +27,78 @@ export function ScheduleCalendar({
   onSelectedTimeChange,
   onPickDate,
 }: Props) {
+  const colors = useThemeColors();
+  const s = useMemo(
+    () =>
+      StyleSheet.create({
+        calWrap: {
+          backgroundColor: colors.surface,
+          borderRadius: 14,
+          borderWidth: 1,
+          borderColor: colors.border,
+          paddingHorizontal: 10,
+          paddingVertical: 10,
+          marginBottom: 12,
+        },
+        calNav: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 },
+        calArrow: {
+          width: 44, height: 44, borderRadius: 12,
+          alignItems: 'center', justifyContent: 'center',
+          backgroundColor: colors.surfaceHigh,
+          borderWidth: 1, borderColor: colors.border,
+        },
+        calMonth: { fontSize: 15, fontWeight: '600', color: colors.text },
+        calWeekdays: { flexDirection: 'row', marginBottom: 4 },
+        calWeekday: { flex: 1, textAlign: 'center', fontSize: 11, color: colors.textMuted, fontWeight: '600' },
+        calGrid: { width: '100%' },
+        calWeekRow: {
+          flexDirection: 'row',
+          width: '100%',
+          marginBottom: 2,
+        },
+        calDayEmpty: { flex: 1, height: 44 },
+        calDay: {
+          flex: 1,
+          height: 44,
+          borderRadius: 10,
+          alignItems: 'center',
+          justifyContent: 'center',
+          position: 'relative',
+        },
+        calDaySelected: { backgroundColor: colors.greenDeep },
+        calDayNum: { fontSize: 13, color: colors.textSecondary, fontWeight: '500' },
+        calDayNumToday: {
+          backgroundColor: colors.greenDeep,
+          color: '#fff',
+          borderRadius: 10,
+          overflow: 'hidden',
+          minWidth: 20,
+          textAlign: 'center',
+        },
+        calDayNumSelected: { color: colors.greenDefault, fontWeight: '700' },
+        calTakenDot: {
+          position: 'absolute',
+          right: 3,
+          top: 4,
+          minWidth: 18,
+          height: 18,
+          borderRadius: 9,
+          backgroundColor: colors.amberDefault,
+          alignItems: 'center',
+          justifyContent: 'center',
+          paddingHorizontal: 3,
+        },
+        calTakenDotSelected: { backgroundColor: colors.amberDefault },
+        calTakenDotText: {
+          fontSize: 10,
+          lineHeight: 11,
+          fontWeight: '700',
+          color: '#fff',
+        },
+      }),
+    [colors],
+  );
+
   const selectedCalendarDay = localCalendarMidnightFromIso(selectedTime);
 
   const weekRows = useMemo(() => {
@@ -119,70 +191,3 @@ export function ScheduleCalendar({
     </View>
   );
 }
-
-const s = StyleSheet.create({
-  calWrap: {
-    backgroundColor: colors.surface,
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: colors.border,
-    paddingHorizontal: 10,
-    paddingVertical: 10,
-    marginBottom: 12,
-  },
-  calNav: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 },
-  calArrow: {
-    width: 34, height: 34, borderRadius: 10,
-    alignItems: 'center', justifyContent: 'center',
-    backgroundColor: '#252522',
-    borderWidth: 1, borderColor: colors.border,
-  },
-  calMonth: { fontSize: 13, fontWeight: '600', color: colors.text },
-  calWeekdays: { flexDirection: 'row', marginBottom: 4 },
-  calWeekday: { flex: 1, textAlign: 'center', fontSize: 10, color: colors.textMuted, fontWeight: '600' },
-  calGrid: { width: '100%' },
-  calWeekRow: {
-    flexDirection: 'row',
-    width: '100%',
-    marginBottom: 2,
-  },
-  calDayEmpty: { flex: 1, height: 36 },
-  calDay: {
-    flex: 1,
-    height: 36,
-    borderRadius: 8,
-    alignItems: 'center',
-    justifyContent: 'center',
-    position: 'relative',
-  },
-  calDaySelected: { backgroundColor: colors.greenDeep },
-  calDayNum: { fontSize: 12, color: colors.textSecondary, fontWeight: '500' },
-  calDayNumToday: {
-    backgroundColor: colors.greenDeep,
-    color: '#fff',
-    borderRadius: 10,
-    overflow: 'hidden',
-    minWidth: 20,
-    textAlign: 'center',
-  },
-  calDayNumSelected: { color: colors.greenDefault, fontWeight: '700' },
-  calTakenDot: {
-    position: 'absolute',
-    right: 3,
-    top: 4,
-    minWidth: 16,
-    height: 16,
-    borderRadius: 8,
-    backgroundColor: colors.amberDefault,
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: 3,
-  },
-  calTakenDotSelected: { backgroundColor: colors.amberDefault },
-  calTakenDotText: {
-    fontSize: 9,
-    lineHeight: 10,
-    fontWeight: '700',
-    color: '#fff',
-  },
-});

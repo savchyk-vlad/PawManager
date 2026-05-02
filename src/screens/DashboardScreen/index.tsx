@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useRef, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   View,
   Text,
@@ -23,7 +23,14 @@ import {
 } from "@react-navigation/native";
 import { BottomTabNavigationProp } from "@react-navigation/bottom-tabs";
 import { Ionicons } from "@expo/vector-icons";
-import { differenceInMinutes, parseISO, isValid, isSameDay } from "date-fns";
+import {
+  differenceInMinutes,
+  parseISO,
+  isValid,
+  isSameDay,
+  startOfDay,
+  format,
+} from "date-fns";
 import { useAppStore } from "../../store";
 import { useAuthStore } from "../../store/authStore";
 import { RootStackParamList, TabParamList } from "../../navigation";
@@ -33,17 +40,20 @@ import {
   walkCharge,
 } from "../../lib/walkMetrics";
 import { FloatingActionButton } from "../../components/FloatingActionButton";
-import { colors } from "../../theme";
+import { useThemeColors, type ThemeColors } from "../../theme";
 import { DashboardHeader } from "./components/DashboardHeader";
 import { DashboardStats } from "./components/DashboardStats";
 import { DashboardActions } from "./components/DashboardActions";
 import { TodayWalksSection } from "./components/TodayWalksSection";
 import { DashboardEmptyState } from "./components/DashboardEmptyState";
 import { ScheduleCard } from "./components/ScheduleCard";
+import { FutureWalkRow } from "./components/FutureWalkRow";
 import { ActiveWalkCard } from "./components/ActiveWalkCard";
 import { CompletedWalkCard } from "./components/CompletedWalkCard";
 import { MissedAlertCard } from "./components/MissedAlertCard";
 import { UpNextCard } from "./components/UpNextCard";
+import { DashboardLoadingSkeleton } from "./components/DashboardLoadingSkeleton";
+import type { FutureWalkDayGroup } from "./components/FutureWalksAccordion";
 
 type HomeNav = CompositeNavigationProp<
   BottomTabNavigationProp<TabParamList, "Walks">,
@@ -88,8 +98,10 @@ const MAX_COMPLETED_PREVIEW = 5;
 const SCREEN_W = Dimensions.get("window").width;
 
 export default function DashboardScreen() {
+  const colors = useThemeColors();
+  const s = useMemo(() => createIndexStyles(colors), [colors]);
   const navigation = useNavigation<HomeNav>();
-  const { walks, clients, loadWalks, loadClients } = useAppStore();
+  const { walks, clients, walksLoading, loadWalks, loadClients } = useAppStore();
   const { session } = useAuthStore();
   const [refreshing, setRefreshing] = useState(false);
   const [activeTab, setActiveTab] = useState<"schedule" | "completed">(
@@ -195,6 +207,34 @@ export default function DashboardScreen() {
     setShowAllCompleted((v) => !v);
   }, []);
 
+  /** Scheduled walks on calendar days after today, grouped by local date. */
+  const futureWalksGrouped = useMemo((): FutureWalkDayGroup[] => {
+    const todayStart = startOfDay(new Date());
+    const future = walks.filter((w) => {
+      if (w.status !== "scheduled") return false;
+      const t = parseWalkDate(w.scheduledAt);
+      if (!t) return false;
+      return startOfDay(t).getTime() > todayStart.getTime();
+    });
+    const byDay = new Map<string, Walk[]>();
+    for (const w of future) {
+      const t = parseWalkDate(w.scheduledAt);
+      if (!t) continue;
+      const key = format(t, "yyyy-MM-dd");
+      const arr = byDay.get(key);
+      if (arr) arr.push(w);
+      else byDay.set(key, [w]);
+    }
+    const keys = [...byDay.keys()].sort();
+    return keys.map((key) => {
+      const ws = byDay.get(key)!;
+      ws.sort((a, b) => a.scheduledAt.localeCompare(b.scheduledAt));
+      const first = parseWalkDate(ws[0].scheduledAt);
+      const dayLabel = first ? format(first, "EEEE, MMM d") : key;
+      return { dayKey: key, dayLabel, walks: ws };
+    });
+  }, [walks]);
+
   useEffect(() => {
     if (
       Platform.OS === "android" &&
@@ -205,6 +245,17 @@ export default function DashboardScreen() {
   }, []);
 
   const insets = useSafeAreaInsets();
+
+  const showSkeleton = walksLoading && walks.length === 0;
+
+  if (showSkeleton) {
+    return (
+      <DashboardLoadingSkeleton
+        insetTop={insets.top}
+        screenWidth={SCREEN_W}
+      />
+    );
+  }
 
   return (
     <View style={s.safe}>
@@ -254,12 +305,16 @@ export default function DashboardScreen() {
           renderScheduleWalk={(walk) => (
             <ScheduleCard key={walk.id} walk={walk} />
           )}
+          renderFutureScheduleWalk={(walk) => (
+            <FutureWalkRow key={walk.id} walk={walk} />
+          )}
           renderUpNextWalk={(walk) => (
             <UpNextCard key={walk.id} walk={walk} parseWalkDate={parseWalkDate} />
           )}
           renderMissedAlert={(walks) => (
             <MissedAlertCard walks={walks} parseWalkDate={parseWalkDate} />
           )}
+          futureWalksGrouped={futureWalksGrouped}
         />
 
         {/* Page 1 — Completed */}
@@ -321,7 +376,8 @@ export default function DashboardScreen() {
   );
 }
 
-const s = StyleSheet.create({
+function createIndexStyles(colors: ThemeColors) {
+  return StyleSheet.create({
   safe: {
     flex: 1,
     backgroundColor: colors.bg,
@@ -446,3 +502,4 @@ const s = StyleSheet.create({
     color: colors.greenText,
   },
 });
+}

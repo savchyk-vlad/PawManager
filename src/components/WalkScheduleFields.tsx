@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { useFormLayoutAnimationKey } from '../hooks/useFormLayoutAnimation';
 import { View, Text, TouchableOpacity, StyleSheet, TextInput } from 'react-native';
 import { FormField } from './FormField';
@@ -10,7 +10,7 @@ import {
 import { useWalkScheduling } from '../hooks/useWalkScheduling';
 import { ScheduleCalendar } from './ScheduleCalendar';
 import { WalkTimePicker } from './WalkTimePicker';
-import { colors } from '../theme';
+import { useThemeColors, type ThemeColors } from '../theme';
 import type { Walk as WalkType } from '../types';
 
 type Props = {
@@ -65,7 +65,9 @@ export function WalkScheduleFields({
   notesPlaceholder = 'Special instructions, gate codes…',
   onNotesFocus,
 }: Props) {
-  const preferredDuration = useSettingsStore((s) => s.defaultWalkDuration);
+  const colors = useThemeColors();
+  const s = useMemo(() => createWalkScheduleFieldsStyles(colors), [colors]);
+  const preferredDuration = useSettingsStore((st) => st.defaultWalkDuration);
 
   const { calendarCells, takenByDayMs, noTimeAvailableThisDay } = useWalkScheduling({
     walks,
@@ -184,9 +186,10 @@ export function WalkScheduleFields({
   );
 }
 
-const s = StyleSheet.create({
+function createWalkScheduleFieldsStyles(colors: ThemeColors) {
+  return StyleSheet.create({
   sectionLabel: {
-    fontSize: 11, fontWeight: '600', letterSpacing: 1.2,
+    fontSize: 12, fontWeight: '600', letterSpacing: 1.2,
     color: colors.textMuted, marginBottom: 8, marginTop: 20,
   },
   card: {
@@ -198,20 +201,21 @@ const s = StyleSheet.create({
   },
   segRow: { flexDirection: 'row', gap: 8, marginBottom: 4 },
   durationPrefHint: {
-    fontSize: 11,
+    fontSize: 13,
     color: colors.textMuted,
     marginBottom: 10,
     letterSpacing: 0.15,
   },
   seg: {
-    flex: 1, paddingVertical: 12, borderRadius: 10,
+    flex: 1, minHeight: 48, paddingVertical: 12, borderRadius: 10,
     backgroundColor: colors.surface, alignItems: 'center',
+    justifyContent: 'center',
     borderWidth: 1, borderColor: colors.border,
   },
   // Selected duration should be clearly green; we disable TouchableOpacity
   // dimming (activeOpacity=1) to prevent it from darkening after tap.
   segActive: { backgroundColor: colors.greenDeep, borderColor: colors.greenDefault },
-  segText: { fontSize: 13, fontWeight: '500', color: colors.textSecondary },
+  segText: { fontSize: 14, fontWeight: '500', color: colors.textSecondary },
   segTextActive: { color: colors.greenDefault, fontWeight: '600' },
   customDurationRow: {
     marginTop: 10,
@@ -235,7 +239,7 @@ const s = StyleSheet.create({
     backgroundColor: colors.greenDeep,
   },
   customDurationInput: {
-    fontSize: 14,
+    fontSize: 16,
     color: colors.textSecondary,
     paddingVertical: 0,
   },
@@ -245,20 +249,21 @@ const s = StyleSheet.create({
   },
   notesInput: {
     paddingHorizontal: 14, paddingVertical: 12,
-    fontSize: 14, color: colors.text, minHeight: 72,
+    fontSize: 16, color: colors.text, minHeight: 88,
     textAlignVertical: 'top',
   },
   shiftEmptyHint: {
-    fontSize: 12,
+    fontSize: 13,
     color: colors.amberDefault,
     marginTop: 4,
     marginBottom: 4,
-    lineHeight: 17,
+    lineHeight: 19,
   },
   requiredHint: {
-    fontSize: 12,
+    fontSize: 13,
     color: colors.amberDefault,
     marginTop: 4,
     marginBottom: 4,
   },
-});
+  });
+}

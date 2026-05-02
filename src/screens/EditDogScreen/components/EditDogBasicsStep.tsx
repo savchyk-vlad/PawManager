@@ -18,7 +18,8 @@ export function EditDogBasicsStep({
   return (
     <View style={styles.card}>
       <FormField
-        label="Name"
+        label="Dog name"
+        required
         value={draft.name}
         onChangeText={(t) => setDraft({ ...draft, name: t })}
         placeholder="Buddy"

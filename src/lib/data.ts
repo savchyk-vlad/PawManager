@@ -1,10 +1,18 @@
 import { Client, Walk } from '../types';
 
+const addr = (line1: string, line2: string, city: string, state: string, postal: string) => ({
+  line1,
+  line2,
+  city,
+  state,
+  postal,
+});
+
 export const clients: Client[] = [
   {
     id: 'c1',
     name: 'Sarah Johnson',
-    address: '1420 Pine St, Seattle WA',
+    address: addr('1420 Pine St', '', 'Seattle', 'WA', '98122'),
     phone: '(206) 555-0101',
     pricePerWalk: 25,
     keyLocation: 'Under the blue flowerpot',
@@ -30,7 +38,7 @@ export const clients: Client[] = [
   {
     id: 'c2',
     name: 'Mike Chen',
-    address: '820 Oak Ave, Seattle WA',
+    address: addr('820 Oak Ave', '', 'Seattle', 'WA', '98104'),
     phone: '(206) 555-0202',
     pricePerWalk: 30,
     keyLocation: 'Key box by the garage, code 1234',
@@ -55,7 +63,7 @@ export const clients: Client[] = [
   {
     id: 'c3',
     name: 'Anna Davis',
-    address: '305 Maple Dr, Seattle WA',
+    address: addr('305 Maple Dr', '', 'Seattle', 'WA', '98109'),
     phone: '(206) 555-0303',
     pricePerWalk: 35,
     keyLocation: 'Door code: 5678',
@@ -92,7 +100,7 @@ export const clients: Client[] = [
   {
     id: 'c4',
     name: 'Tom Williams',
-    address: '750 Cedar St, Seattle WA',
+    address: addr('750 Cedar St', '', 'Seattle', 'WA', '98121'),
     phone: '(206) 555-0404',
     pricePerWalk: 25,
     keyLocation: 'Hidden under the mat',

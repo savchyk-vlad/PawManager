@@ -18,7 +18,9 @@ import type { OnboardingStackParamList } from "../../navigation/OnboardingNaviga
 
 const appIcon = require("../../../assets/icon.png");
 
-type Props = NativeStackScreenProps<OnboardingStackParamList, "Onboarding">;
+type Props = NativeStackScreenProps<OnboardingStackParamList, "Onboarding"> & {
+  onDone: () => void;
+};
 
 type Slide = {
   key: string;
@@ -32,59 +34,52 @@ const SLIDES: Slide[] = [
   {
     key: "problem",
     title: "Sound familiar?",
-    body:
-      "Running your business across 4 different apps is exhausting. There's a better way.",
+    body: "Running your business across 4 different apps is exhausting. There's a better way.",
     cta: "Next",
   },
   {
     key: "clients",
     title: "Every dog.\nEvery detail.",
-    body:
-      "Client profiles, dog notes, vet info, and gate codes — all one tap away.",
+    body: "Client profiles, dog notes, vet info, and gate codes — all one tap away.",
     cta: "Next",
   },
   {
     key: "schedule",
     title: "Your day,\norganized.",
-    body:
-      "30-min reminders before every walk. Set recurring schedules once — forget about it.",
+    body: "30-min reminders before every walk. Set recurring schedules once — forget about it.",
     cta: "Next",
   },
   {
     key: "payments",
     title: "Never miss\na payment.",
-    body:
-      "See exactly who owes what. Automatic reminders after 7 days. Your money, yours.",
+    body: "See exactly who owes what. Automatic reminders after 7 days. Your money, yours.",
     cta: "Get started",
   },
 ];
 
-export default function OnboardingScreen({ route }: Props) {
+export default function OnboardingScreen({ onDone }: Props) {
   const insets = useSafeAreaInsets();
-  const onDone = route.params.onDone;
   const c = onboarding.colors;
-  const r = onboarding.radius;
   const screenW = Dimensions.get("window").width;
 
   const [idx, setIdx] = useState(0);
   const slide = SLIDES[idx]!;
-  const splashTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const carouselRef = useRef<ScrollView>(null);
   const scrollX = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
     if (slide.key !== "splash") return;
-    splashTimerRef.current = setTimeout(() => setIdx(1), 1400);
-    return () => {
-      if (splashTimerRef.current) clearTimeout(splashTimerRef.current);
-      splashTimerRef.current = null;
-    };
+
+    const timer = setTimeout(() => {
+      setIdx(1);
+    }, 1400);
+
+    return () => clearTimeout(timer);
   }, [slide.key]);
 
   const dots = useMemo(() => {
-    // Match the HTML: dots appear for screens 2..5 (4 dots).
+    // Match the HTML: dots appear for screens 2..5.
     if (idx === 0) return null;
-    const dotIdx = Math.max(0, Math.min(3, idx - 1));
     return (
       <View style={s.dots}>
         {Array.from({ length: 4 }, (_, i) => {
@@ -118,28 +113,21 @@ export default function OnboardingScreen({ route }: Props) {
         })}
       </View>
     );
-  }, [idx, screenW, scrollX, c.accent, c.bg3]);
-
-  const goNext = () => {
-    if (idx >= SLIDES.length - 1) {
-      onDone();
-      return;
-    }
-    setIdx((p) => Math.min(SLIDES.length - 1, p + 1));
-  };
+  }, [screenW, scrollX, c.accent, c.bg3]);
 
   const onSkip = () => onDone();
 
   const contentSlides = useMemo(() => SLIDES.slice(1), []);
-  const pageIndex = Math.max(0, idx - 1); // 0..3 for carousel pages
+  const pageIndex = Math.max(0, idx - 1);
 
   return (
     <View
       style={[
         s.safe,
-        // Splash should cover the full screen (including top safe area).
-        // Other onboarding screens keep content below the top inset.
-        { paddingTop: slide.key === "splash" ? 0 : insets.top, backgroundColor: c.bg },
+        {
+          paddingTop: slide.key === "splash" ? 0 : insets.top,
+          backgroundColor: c.bg,
+        },
       ]}>
       {slide.key === "splash" ? (
         <Pressable style={{ flex: 1 }} onPress={() => setIdx(1)}>
@@ -147,8 +135,7 @@ export default function OnboardingScreen({ route }: Props) {
             colors={["#0E1A11", "#122B18", "#1A4025"]}
             start={{ x: 0.1, y: 0.0 }}
             end={{ x: 0.9, y: 1.0 }}
-            style={s.splashWrap}
-          >
+            style={s.splashWrap}>
             <View style={s.splashGlowA} pointerEvents="none" />
             <View style={s.splashGlowB} pointerEvents="none" />
             <Image source={appIcon} style={s.appIcon} resizeMode="contain" />
@@ -185,13 +172,15 @@ export default function OnboardingScreen({ route }: Props) {
             onMomentumScrollEnd={(e) => {
               const x = e.nativeEvent.contentOffset.x;
               scrollX.setValue(x);
-              const page = Math.max(0, Math.min(contentSlides.length - 1, Math.round(x / screenW)));
-              const nextIdx = page + 1; // map back to SLIDES index
+              const page = Math.max(
+                0,
+                Math.min(contentSlides.length - 1, Math.round(x / screenW)),
+              );
+              const nextIdx = page + 1;
               if (nextIdx !== idx) setIdx(nextIdx);
             }}
-            style={{ flex: 1 }}
-          >
-            {contentSlides.map((sl, i) => (
+            style={{ flex: 1 }}>
+            {contentSlides.map((sl) => (
               <View key={sl.key} style={{ width: screenW, paddingHorizontal: 26 }}>
                 <View style={s.illusWrap}>
                   {sl.key === "problem" ? <ProblemIllustration /> : null}
@@ -208,7 +197,7 @@ export default function OnboardingScreen({ route }: Props) {
           </ScrollView>
 
           <View style={[s.navRow, { paddingHorizontal: 26 }]}>
-            {dots}
+            <View style={s.dotsSlot}>{dots}</View>
             <TouchableOpacity
               style={[
                 s.btn,
@@ -224,7 +213,10 @@ export default function OnboardingScreen({ route }: Props) {
                   return;
                 }
                 const nextPage = Math.min(contentSlides.length - 1, pageIndex + 1);
-                carouselRef.current?.scrollTo({ x: nextPage * screenW, animated: true });
+                carouselRef.current?.scrollTo({
+                  x: nextPage * screenW,
+                  animated: true,
+                });
               }}
               activeOpacity={0.9}>
               <Text style={s.btnText}>{slide.cta} →</Text>
@@ -261,24 +253,44 @@ function ProblemIllustration() {
     <View style={{ width: "100%", alignItems: "center" }}>
       <View style={{ transform: [{ scale: 1.32 }] }}>
         <View style={{ width: 260, height: 210 }}>
-          <Card style={[s.floatCard, { transform: [{ rotate: "-5deg" }], left: 0, top: -20 }]}>
-          <Text style={[s.floatHdr, { color: c.teal }]}>GOOGLE CALENDAR</Text>
-          <Text style={[s.floatBody, { color: c.text2 }]}>Mon: Max @ 10am?{"\n"}Tue: Biscuit maybe 🤷</Text>
-        </Card>
-        <Card style={[s.floatCard, { transform: [{ rotate: "5deg" }], right: -20, top: 46 }]}>
-          <Text style={[s.floatHdr, { color: "#5680FF" }]}>VENMO</Text>
-          <Text style={[s.floatBody, { color: c.text2 }]}>Who paid me?? 😅</Text>
-        </Card>
-        <Card style={[s.floatCard, { transform: [{ rotate: "4deg" }], left: 4, bottom: 20 }]}>
-          <Text style={[s.floatHdr, { color: c.amber }]}>PAPER NOTEBOOK</Text>
-          <Text style={[s.floatBody, { color: c.text2 }]}>
-            Bear gate code: 48??{"\n"}or was it 84… 😬
-          </Text>
-        </Card>
-        <Card style={[s.floatCard, { transform: [{ rotate: "-8deg" }], right: -20, bottom: -12 }]}>
-          <Text style={[s.floatHdr, { color: "#25D265" }]}>WHATSAPP</Text>
-          <Text style={[s.floatBody, { color: c.text2 }]}>47 unread 😩</Text>
-        </Card>
+          <Card
+            style={[
+              s.floatCard,
+              { transform: [{ rotate: "-5deg" }], left: 0, top: -20 },
+            ]}>
+            <Text style={[s.floatHdr, { color: c.teal }]}>GOOGLE CALENDAR</Text>
+            <Text style={[s.floatBody, { color: c.text2 }]}>
+              Mon: Max @ 10am?{"\n"}Tue: Biscuit maybe 🤷
+            </Text>
+          </Card>
+          <Card
+            style={[
+              s.floatCard,
+              { transform: [{ rotate: "5deg" }], right: -20, top: 46 },
+            ]}>
+            <Text style={[s.floatHdr, { color: "#5680FF" }]}>VENMO</Text>
+            <Text style={[s.floatBody, { color: c.text2 }]}>
+              Who paid me?? 😅
+            </Text>
+          </Card>
+          <Card
+            style={[
+              s.floatCard,
+              { transform: [{ rotate: "4deg" }], left: 4, bottom: 20 },
+            ]}>
+            <Text style={[s.floatHdr, { color: c.amber }]}>PAPER NOTEBOOK</Text>
+            <Text style={[s.floatBody, { color: c.text2 }]}>
+              Bear gate code: 48??{"\n"}or was it 84… 😬
+            </Text>
+          </Card>
+          <Card
+            style={[
+              s.floatCard,
+              { transform: [{ rotate: "-8deg" }], right: -20, bottom: -12 },
+            ]}>
+            <Text style={[s.floatHdr, { color: "#25D265" }]}>WHATSAPP</Text>
+            <Text style={[s.floatBody, { color: c.text2 }]}>47 unread 😩</Text>
+          </Card>
         </View>
       </View>
     </View>
@@ -295,13 +307,18 @@ function ClientsIllustration() {
           <View
             style={[
               s.dogAvatar,
-              { backgroundColor: c.accentDim, borderColor: "rgba(74,224,112,0.15)" },
+              {
+                backgroundColor: c.accentDim,
+                borderColor: "rgba(74,224,112,0.15)",
+              },
             ]}>
             <Text style={{ fontSize: 22 }}>🐶</Text>
           </View>
           <View style={{ flex: 1 }}>
             <Text style={[s.dogName, { color: c.text }]}>Max</Text>
-            <Text style={[s.dogMeta, { color: c.text3 }]}>Labrador · 4 yrs · 65 lbs</Text>
+            <Text style={[s.dogMeta, { color: c.text3 }]}>
+              Labrador · 4 yrs · 65 lbs
+            </Text>
           </View>
         </View>
         <View style={s.tagsRow}>
@@ -315,7 +332,15 @@ function ClientsIllustration() {
             <Text style={[s.tagText, { color: c.amber }]}>Pulls near park</Text>
           </View>
         </View>
-        <View style={[s.noteBox, { backgroundColor: c.bg3, borderRadius: r.rSm, borderColor: c.borderMd }]}>
+        <View
+          style={[
+            s.noteBox,
+            {
+              backgroundColor: c.bg3,
+              borderRadius: r.rSm,
+              borderColor: c.borderMd,
+            },
+          ]}>
           <Text style={[s.noteText, { color: c.text2 }]}>
             🔑 Key under blue pot · Gate: 4821{"\n"}🏥 Vet: Dr. Kim (555-0142)
           </Text>
@@ -359,7 +384,9 @@ function ScheduleIllustration() {
         <View style={[s.vLine, { backgroundColor: c.accent }]} />
         <View style={{ flex: 1 }}>
           <Text style={[s.walkDog, { color: c.text }]}>Max</Text>
-          <Text style={[s.walkMeta, { color: c.text3 }]}>Sarah Johnson · 30 min</Text>
+          <Text style={[s.walkMeta, { color: c.text3 }]}>
+            Sarah Johnson · 30 min
+          </Text>
         </View>
         <View style={[s.startPill, { backgroundColor: c.accent }]}>
           <Text style={s.startPillText}>START</Text>
@@ -374,17 +401,29 @@ function ScheduleIllustration() {
         <View style={[s.vLine, { backgroundColor: c.borderMd }]} />
         <View style={{ flex: 1 }}>
           <Text style={[s.walkDog, { color: c.text }]}>Biscuit</Text>
-          <Text style={[s.walkMeta, { color: c.text3 }]}>Mike Torres · 45 min</Text>
+          <Text style={[s.walkMeta, { color: c.text3 }]}>
+            Mike Torres · 45 min
+          </Text>
         </View>
         <View style={[s.statusPill, { backgroundColor: c.tealDim }]}>
           <Text style={[s.statusPillText, { color: c.teal }]}>Sched</Text>
         </View>
       </Card>
 
-      <View style={[s.recurring, { backgroundColor: c.amberDim, borderColor: "rgba(240,160,58,0.18)", borderRadius: r.rSm }]}>
+      <View
+        style={[
+          s.recurring,
+          {
+            backgroundColor: c.amberDim,
+            borderColor: "rgba(240,160,58,0.18)",
+            borderRadius: r.rSm,
+          },
+        ]}>
         <Text style={{ fontSize: 16 }}>🔁</Text>
         <View style={{ flex: 1 }}>
-          <Text style={[s.recurringTitle, { color: c.amber }]}>Recurring walk active</Text>
+          <Text style={[s.recurringTitle, { color: c.amber }]}>
+            Recurring walk active
+          </Text>
           <Text style={[s.recurringSub, { color: "rgba(240,160,58,0.65)" }]}>
             Mon · Wed · Fri — set it once, done
           </Text>
@@ -413,17 +452,21 @@ function PaymentsIllustration() {
             shadowRadius: 16,
             shadowOffset: { width: 0, height: 10 },
           },
-        ]}
-      >
-        <Text style={[s.earningsHdr, { color: "rgba(74,224,112,0.6)" }]}>THIS MONTH</Text>
+        ]}>
+        <Text style={[s.earningsHdr, { color: "rgba(74,224,112,0.6)" }]}>
+          THIS MONTH
+        </Text>
         <Text style={[s.earningsVal, { color: c.text }]}>$1,840</Text>
         <View style={s.growthPill}>
-          <Text style={[s.growthText, { color: c.accent }]}>↑ 23% vs last month</Text>
+          <Text style={[s.growthText, { color: c.accent }]}>
+            ↑ 23% vs last month
+          </Text>
         </View>
       </LinearGradient>
 
       <Card style={{ width: "100%", overflow: "hidden" }}>
-        <View style={[s.unpaidHdr, { backgroundColor: "rgba(240,85,85,0.08)" }]}>
+        <View
+          style={[s.unpaidHdr, { backgroundColor: "rgba(240,85,85,0.08)" }]}>
           <Text style={[s.unpaidHdrText, { color: c.red }]}>UNPAID · $225</Text>
         </View>
         <View style={s.unpaidRow}>
@@ -452,7 +495,15 @@ function PaymentsIllustration() {
         </View>
       </Card>
 
-      <Card style={[s.zeroCard, { backgroundColor: c.bg3, borderColor: c.borderMd, borderRadius: r.rSm }]}>
+      <Card
+        style={[
+          s.zeroCard,
+          {
+            backgroundColor: c.bg3,
+            borderColor: c.borderMd,
+            borderRadius: r.rSm,
+          },
+        ]}>
         <Text style={{ fontSize: 18 }}>🚫</Text>
         <Text style={[s.zeroText, { color: c.text }]}>
           Zero commission. <Text style={{ color: c.accent }}>Zero.</Text>
@@ -514,12 +565,6 @@ const s = StyleSheet.create({
     fontWeight: "400",
     letterSpacing: 0.2,
   },
-  pip: {
-    width: 6,
-    height: 4,
-    borderRadius: 99,
-    backgroundColor: "rgba(255,255,255,0.15)",
-  },
 
   // Content
   illusWrap: {
@@ -543,8 +588,13 @@ const s = StyleSheet.create({
   navRow: {
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "space-between",
+    justifyContent: "flex-end",
     gap: 16,
+  },
+  dotsSlot: {
+    flex: 1,
+    alignItems: "flex-start",
+    justifyContent: "center",
   },
   btn: { borderRadius: 999 },
   btnText: {
@@ -583,7 +633,12 @@ const s = StyleSheet.create({
 
   // Clients
   bigCard: { padding: 16 },
-  dogRow: { flexDirection: "row", alignItems: "center", gap: 12, marginBottom: 14 },
+  dogRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+    marginBottom: 14,
+  },
   dogAvatar: {
     width: 50,
     height: 50,
@@ -614,12 +669,25 @@ const s = StyleSheet.create({
   },
   owner: { fontSize: 12, fontWeight: "400" },
   price: { fontSize: 14, fontWeight: "700" },
-  peekCard: { flexDirection: "row", alignItems: "center", gap: 10, paddingHorizontal: 16, paddingVertical: 12, opacity: 0.5 },
+  peekCard: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    opacity: 0.5,
+  },
   peekName: { fontSize: 14, fontWeight: "600" },
   peekOwner: { fontSize: 12, fontWeight: "400" },
 
   // Schedule
-  notify: { flexDirection: "row", alignItems: "flex-start", gap: 11, paddingHorizontal: 14, paddingVertical: 13 },
+  notify: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    gap: 11,
+    paddingHorizontal: 14,
+    paddingVertical: 13,
+  },
   notifyIcon: {
     width: 38,
     height: 38,
@@ -632,7 +700,13 @@ const s = StyleSheet.create({
   },
   notifyTitle: { fontSize: 12, fontWeight: "700" },
   notifyText: { fontSize: 11, marginTop: 3, lineHeight: 16, fontWeight: "400" },
-  walkCard: { flexDirection: "row", alignItems: "center", gap: 11, paddingHorizontal: 14, paddingVertical: 13 },
+  walkCard: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 11,
+    paddingHorizontal: 14,
+    paddingVertical: 13,
+  },
   timeCol: { width: 44, alignItems: "center" },
   timeVal: { fontSize: 14, fontWeight: "700" },
   timeAp: { fontSize: 9, fontWeight: "600", marginTop: 1 },
@@ -664,10 +738,27 @@ const s = StyleSheet.create({
     borderWidth: 1,
   },
   earningsHdr: { fontSize: 11, fontWeight: "600", letterSpacing: 0.6 },
-  earningsVal: { fontSize: 38, fontWeight: "700", letterSpacing: -1.2, marginTop: 6 },
-  growthPill: { marginTop: 10, alignSelf: "flex-start", backgroundColor: "rgba(74,224,112,0.15)", borderRadius: 999, paddingHorizontal: 10, paddingVertical: 4 },
+  earningsVal: {
+    fontSize: 38,
+    fontWeight: "700",
+    letterSpacing: -1.2,
+    marginTop: 6,
+  },
+  growthPill: {
+    marginTop: 10,
+    alignSelf: "flex-start",
+    backgroundColor: "rgba(74,224,112,0.15)",
+    borderRadius: 999,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+  },
   growthText: { fontSize: 11, fontWeight: "700" },
-  unpaidHdr: { paddingHorizontal: 14, paddingVertical: 9, borderBottomWidth: 1, borderBottomColor: "rgba(255,255,255,0.07)" },
+  unpaidHdr: {
+    paddingHorizontal: 14,
+    paddingVertical: 9,
+    borderBottomWidth: 1,
+    borderBottomColor: "rgba(255,255,255,0.07)",
+  },
   unpaidHdrText: { fontSize: 10, fontWeight: "700", letterSpacing: 0.7 },
   unpaidRow: {
     paddingHorizontal: 14,
@@ -681,8 +772,20 @@ const s = StyleSheet.create({
   unpaidName: { fontSize: 14, fontWeight: "600" },
   unpaidMeta: { fontSize: 11, marginTop: 2, fontWeight: "400" },
   unpaidAmt: { fontSize: 15, fontWeight: "700" },
-  markPaidPill: { borderRadius: 999, paddingHorizontal: 11, paddingVertical: 5 },
+  markPaidPill: {
+    borderRadius: 999,
+    paddingHorizontal: 11,
+    paddingVertical: 5,
+  },
   markPaidText: { fontSize: 10, fontWeight: "900", color: "#0A1A0F" },
-  zeroCard: { width: "100%", flexDirection: "row", alignItems: "center", gap: 10, paddingHorizontal: 14, paddingVertical: 11, borderWidth: 1 },
+  zeroCard: {
+    width: "100%",
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+    paddingHorizontal: 14,
+    paddingVertical: 11,
+    borderWidth: 1,
+  },
   zeroText: { fontSize: 13, fontWeight: "600" },
 });

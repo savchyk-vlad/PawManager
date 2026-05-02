@@ -1,6 +1,7 @@
-import React from "react";
+import React, { useMemo } from "react";
 import { View, Text, TouchableOpacity, Linking } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import { clientAvatarTint } from "../../../lib/clientAvatarColors";
 
 type Styles = {
   header: object;
@@ -18,29 +19,34 @@ type Styles = {
 };
 
 export function ClientDetailHeader({
+  clientId,
   clientName,
   dogSubtitle,
   initials,
   phone,
-  address,
+  addressForMaps,
   styles,
   onBack,
   onEdit,
 }: {
+  clientId: string;
   clientName: string;
   dogSubtitle: string;
   initials: string;
   phone: string;
-  address: string;
+  /** Single-line address for navigation; empty disables Navigate. */
+  addressForMaps: string;
   styles: Styles;
   onBack: () => void;
   onEdit: () => void;
 }) {
+  const avatarTint = useMemo(() => clientAvatarTint(clientId), [clientId]);
+
   return (
     <View style={styles.header}>
       <View style={styles.headerTopRow}>
         <TouchableOpacity style={styles.backBtn} onPress={onBack} accessibilityRole="button">
-          <Ionicons name="arrow-back" size={18} color="white" />
+          <Ionicons name="arrow-back" size={18} color="rgba(255,255,255,0.45)" />
         </TouchableOpacity>
 
         <View style={styles.headerBody}>
@@ -52,8 +58,17 @@ export function ClientDetailHeader({
               {dogSubtitle}
             </Text>
           </View>
-          <View style={styles.avatarLg}>
-            <Text style={styles.avatarLgText}>{initials}</Text>
+          <View
+            style={[
+              styles.avatarLg,
+              {
+                backgroundColor: avatarTint.backgroundColor,
+                borderColor: "rgba(255,255,255,0.22)",
+              },
+            ]}>
+            <Text style={[styles.avatarLgText, { color: avatarTint.color }]}>
+              {initials}
+            </Text>
           </View>
         </View>
       </View>
@@ -64,9 +79,10 @@ export function ClientDetailHeader({
           <Text style={styles.actionLabel}>Call</Text>
         </TouchableOpacity>
         <TouchableOpacity
-          style={styles.actionBtn}
+          style={[styles.actionBtn, !addressForMaps.trim() && { opacity: 0.45 }]}
+          disabled={!addressForMaps.trim()}
           onPress={() => {
-            const addr = encodeURIComponent(address);
+            const addr = encodeURIComponent(addressForMaps.trim());
             Linking.openURL(`maps://maps.google.com/maps?daddr=${addr}`);
           }}>
           <Ionicons name="navigate-outline" size={16} color="white" />

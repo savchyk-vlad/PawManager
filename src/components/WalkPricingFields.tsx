@@ -8,7 +8,7 @@ import {
   TouchableOpacity,
 } from "react-native";
 import type { Dog } from "../types";
-import { colors } from "../theme";
+import { useThemeColors, type ThemeColors } from "../theme";
 import { ActionModal } from "./ActionModal";
 
 /** Schedule / edit walk pricing — colors aligned with AddWalk / EditWalk. */
@@ -34,7 +34,7 @@ export function computeWalkPricingTotal(
   return sum;
 }
 
-/** Shown below schedule fields, above Schedule / Save — sum of per-dog rates. */
+/** Sum of per-dog rates — on Add Walk, render below schedule / above primary action. */
 export function WalkPricingTotalBar({
   dogs,
   priceInputs,
@@ -42,6 +42,39 @@ export function WalkPricingTotalBar({
   dogs: Dog[];
   priceInputs: Record<string, string>;
 }) {
+  const colors = useThemeColors();
+  const barStyles = useMemo(
+    () =>
+      StyleSheet.create({
+        wrap: {
+          flexDirection: "row",
+          alignItems: "center",
+          justifyContent: "space-between",
+          marginTop: 20,
+          paddingHorizontal: 18,
+          paddingVertical: 16,
+          backgroundColor: colors.surfaceHigh,
+          borderRadius: 14,
+          borderWidth: 1,
+          borderColor: colors.border,
+        },
+        label: {
+          fontSize: 13,
+          fontWeight: "600",
+          letterSpacing: 0.3,
+          color: colors.textMuted,
+        },
+        amount: {
+          fontSize: 22,
+          fontWeight: "700",
+          color: colors.text,
+        },
+        amountFlash: {
+          color: colors.greenDefault,
+        },
+      }),
+    [colors],
+  );
   const walkTotal = useMemo(
     () => computeWalkPricingTotal(dogs, priceInputs),
     [dogs, priceInputs],
@@ -76,12 +109,14 @@ export function WalkPricingTotalBar({
 }
 
 export function WalkPricingFields({ dogs, priceInputs, onPriceChange }: Props) {
-  if (dogs.length === 0) return null;
-
+  const colors = useThemeColors();
+  const styles = useMemo(() => createWalkPricingFieldsStyles(colors), [colors]);
   const [editingDog, setEditingDog] = useState<Dog | null>(null);
   const editingValue = editingDog ? priceInputs[editingDog.id] ?? "" : "";
 
   const closeModal = () => setEditingDog(null);
+
+  if (dogs.length === 0) return null;
 
   return (
     <>
@@ -152,38 +187,10 @@ export function WalkPricingFields({ dogs, priceInputs, onPriceChange }: Props) {
   );
 }
 
-const barStyles = StyleSheet.create({
-  wrap: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    marginTop: 20,
-    paddingHorizontal: 18,
-    paddingVertical: 16,
-    backgroundColor: colors.surfaceHigh,
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: colors.border,
-  },
-  label: {
-    fontSize: 13,
-    fontWeight: "600",
-    letterSpacing: 0.3,
-    color: colors.textSecondary,
-  },
-  amount: {
-    fontSize: 22,
-    fontWeight: "700",
-    color: colors.text,
-  },
-  amountFlash: {
-    color: colors.greenDefault,
-  },
-});
-
-const styles = StyleSheet.create({
+function createWalkPricingFieldsStyles(colors: ThemeColors) {
+  return StyleSheet.create({
   sectionLabel: {
-    fontSize: 11,
+    fontSize: 12,
     fontWeight: "600",
     letterSpacing: 1.2,
     color: colors.textMuted,
@@ -208,7 +215,7 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
   },
   cardHeaderLabel: {
-    fontSize: 10,
+    fontSize: 11,
     fontWeight: "600",
     letterSpacing: 1.2,
     textTransform: "uppercase",
@@ -218,6 +225,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: 14,
+    minHeight: 56,
     paddingHorizontal: 18,
     paddingVertical: 14,
   },
@@ -246,13 +254,13 @@ const styles = StyleSheet.create({
     minWidth: 0,
   },
   dogName: {
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: "600",
     color: colors.text,
     lineHeight: 18,
   },
   dogBreed: {
-    fontSize: 12,
+    fontSize: 13,
     color: colors.textSecondary,
     marginTop: 1,
   },
@@ -290,12 +298,14 @@ const styles = StyleSheet.create({
     borderColor: colors.greenBorder,
     borderRadius: 999,
     paddingHorizontal: 12,
-    paddingVertical: 8,
+    paddingVertical: 10,
+    minHeight: 44,
     minWidth: 70,
     alignItems: "flex-end",
+    justifyContent: "center",
   },
   pricePillText: {
-    fontSize: 15,
+    fontSize: 16,
     fontWeight: "700",
     color: colors.greenDefault,
   },
@@ -331,7 +341,8 @@ const styles = StyleSheet.create({
   },
   modalHint: {
     marginTop: 10,
-    fontSize: 12,
+    fontSize: 13,
     color: colors.textMuted,
   },
 });
+}

@@ -2,7 +2,7 @@ import React from "react";
 import { View, Text, TouchableOpacity } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { FormField } from "../../../components/FormField";
-import { colors } from "../../../theme";
+import { useThemeColors } from "../../../theme";
 
 export type ClientsFilterMode = "all" | "unpaid";
 
@@ -36,6 +36,7 @@ export function ClientsSearchHeader({
   filter: ClientsFilterMode;
   onSelectFilter: (key: ClientsFilterMode) => void;
 }) {
+  const colors = useThemeColors();
   return (
     <View style={styles.searchWrap}>
       <View style={styles.searchBar}>

@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useMemo } from "react";
 import {
   Alert,
   StyleSheet,
@@ -15,7 +15,7 @@ import { Walk } from "../../../types";
 import { isWalkLateToStart } from "../../../lib/missedWalksService";
 import { walkCharge } from "../../../lib/walkMetrics";
 import { DogEmojiStack } from "../../../components/DogEmojiStack";
-import { colors } from "../../../theme";
+import { useThemeColors, type ThemeColors } from "../../../theme";
 import { Ionicons } from "@expo/vector-icons";
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
@@ -27,6 +27,8 @@ function parseWalkDate(iso: string | undefined): Date | null {
 }
 
 export function ScheduleCard({ walk }: { walk: Walk }) {
+  const colors = useThemeColors();
+  const sc = useMemo(() => createSchedulecardStyles(colors), [colors]);
   const navigation = useNavigation<Nav>();
   const { clients, startWalk } = useAppStore();
   const client = clients.find((c) => c.id === walk.clientId);
@@ -126,7 +128,8 @@ export function ScheduleCard({ walk }: { walk: Walk }) {
   );
 }
 
-const sc = StyleSheet.create({
+function createSchedulecardStyles(colors: ThemeColors) {
+  return StyleSheet.create({
   card: {
     backgroundColor: colors.surface,
     borderWidth: StyleSheet.hairlineWidth,
@@ -190,3 +193,4 @@ const sc = StyleSheet.create({
   btnText_soon: { color: colors.greenText },
   btnText_later: { color: colors.greenText },
 });
+}

@@ -1,0 +1,332 @@
+import { StyleSheet } from "react-native";
+import type { ThemeColors } from "../../theme";
+
+export function createSettingsScreenStyles(colors: ThemeColors) {
+  return StyleSheet.create({
+  safe: { flex: 1, backgroundColor: colors.bg },
+  fontFallback: { alignItems: "center" },
+  pageBody: {
+    paddingHorizontal: 12,
+    paddingBottom: 16,
+    paddingTop: 0,
+  },
+  profileHero: {
+    marginTop: 0,
+  },
+  profileHeaderShell: {
+    backgroundColor: colors.greenDeep,
+    marginHorizontal: 0,
+    marginTop: 0,
+    marginBottom: 0,
+    paddingTop: 18,
+    paddingHorizontal: 24,
+    borderBottomLeftRadius: 14,
+    borderBottomRightRadius: 14,
+  },
+  profileHeaderTopRow: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    justifyContent: "space-between",
+  },
+  profileHeaderLeft: {
+    flex: 1,
+    minWidth: 0,
+  },
+  profileHeaderTitle: {
+    fontSize: 34,
+    lineHeight: 36,
+    fontWeight: "700",
+    color: colors.text,
+    letterSpacing: -1.1,
+  },
+  profileHeaderSubtitle: {
+    fontSize: 15,
+    color: "rgba(255,255,255,0.58)",
+    fontWeight: "600",
+    marginTop: 6,
+  },
+  profileIdentityRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 14,
+    marginTop: 24,
+    paddingBottom: 18,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: "rgba(255,255,255,0.1)",
+  },
+  profileIdentityBody: {
+    flex: 1,
+    minWidth: 0,
+  },
+  avatarCircle: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    backgroundColor: colors.greenSubtle,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: colors.greenBorder,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  avatarLetter: { fontSize: 24, fontWeight: "700", color: colors.greenText },
+
+  editProfileBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    backgroundColor: colors.greenSubtle,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: colors.greenBorder,
+    borderRadius: 18,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    minHeight: 44,
+    justifyContent: "center",
+    marginLeft: 12,
+  },
+  editProfileBtnText: {
+    fontSize: 14,
+    color: colors.greenText,
+    fontWeight: "600",
+  },
+  profileName: {
+    fontSize: 22,
+    fontWeight: "600",
+    color: colors.text,
+    letterSpacing: -0.7,
+    textAlign: "left",
+    minWidth: 0,
+  },
+  profileEmail: {
+    fontSize: 13,
+    color: "rgba(255,255,255,0.62)",
+    marginTop: 3,
+  },
+  heroSaving: { fontSize: 11, color: colors.greenText, marginTop: 4 },
+  profileStatsRow: {
+    width: "100%",
+    marginTop: 18,
+    flexDirection: "row",
+    alignItems: "stretch",
+    gap: 8,
+  },
+  profileStatItem: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    minHeight: 68,
+    paddingVertical: 12,
+    paddingHorizontal: 8,
+    borderRadius: 14,
+    backgroundColor: "rgba(255,255,255,0.055)",
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: "rgba(255,255,255,0.08)",
+  },
+  profileStatValue: {
+    fontSize: 16,
+    lineHeight: 18,
+    color: colors.text,
+    letterSpacing: -0.3,
+  },
+  profileStatValueAccent: {
+    color: colors.greenText,
+  },
+  profileStatLabel: {
+    marginTop: 4,
+    fontSize: 10,
+    color: "rgba(255,255,255,0.55)",
+    letterSpacing: 0.5,
+    textTransform: "uppercase",
+  },
+  sectionLabel: {
+    fontSize: 10,
+    fontWeight: "600",
+    letterSpacing: 0.8,
+    color: colors.textMuted,
+    textTransform: "uppercase",
+    paddingHorizontal: 4,
+    marginTop: 16,
+    marginBottom: 8,
+  },
+  sectionLabelRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: 8,
+    paddingRight: 2,
+  },
+  card: {
+    backgroundColor: colors.surface,
+    borderRadius: 20,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: colors.border,
+    overflow: "hidden",
+    marginBottom: 10,
+  },
+  hairline: {
+    height: StyleSheet.hairlineWidth,
+    backgroundColor: colors.border,
+    marginHorizontal: 0,
+  },
+
+  row: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingHorizontal: 16,
+    paddingVertical: 13,
+  },
+  /** Sign out / Delete account rows — taller tap area and aligned with icon size 18 */
+  accountActionRow: {
+    paddingVertical: 15,
+    minHeight: 52,
+  },
+  rowLabel: { fontSize: 13, fontWeight: "500", color: colors.text },
+  rowLabelSignOut: {
+    fontSize: 13,
+    fontWeight: "500",
+    color: colors.amberDefault,
+  },
+  rowLabelDelete: { fontSize: 13, fontWeight: "500", color: colors.redDefault },
+  rowSub: { fontSize: 11, color: colors.textMuted, marginTop: 2 },
+  rowValueWrap: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    maxWidth: "58%",
+  },
+  rowValueDisplay: {
+    flex: 1,
+    fontSize: 13,
+    color: colors.textMuted,
+    textAlign: "right",
+  },
+  rowValuePlaceholder: {
+    color: colors.textMuted,
+  },
+  rowChevron: { fontSize: 14, color: colors.textMuted },
+
+  comingSoonBadge: {
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 8,
+    backgroundColor: "rgba(139,168,144,0.16)",
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: "rgba(139,168,144,0.45)",
+  },
+  comingSoonBadgeText: {
+    fontSize: 10,
+    fontWeight: "700",
+    color: colors.textSecondary,
+    letterSpacing: 0.35,
+    textTransform: "uppercase",
+  },
+
+  rateMono: {
+    fontSize: 13,
+    fontWeight: "600",
+    color: colors.textMuted,
+  },
+  rateWalk: { fontSize: 10, color: colors.textMuted },
+
+  rateOptionsLabel: {
+    fontSize: 11,
+    fontWeight: "600",
+    letterSpacing: 0.4,
+    color: colors.textMuted,
+    marginBottom: 8,
+  },
+  rateOptionsRow: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 8,
+  },
+  rateOptionChip: {
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: 10,
+    backgroundColor: colors.surface,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: colors.border,
+  },
+  rateOptionChipActive: {
+    backgroundColor: colors.greenDeep,
+    borderColor: "rgba(126,203,90,0.3)",
+  },
+  rateOptionChipText: {
+    fontSize: 12,
+    fontWeight: "600",
+    color: colors.textMuted,
+  },
+  rateOptionChipTextActive: {
+    color: colors.greenDefault,
+  },
+
+  notifWalkReminder: {
+    paddingHorizontal: 16,
+    paddingTop: 14,
+    paddingBottom: 14,
+    gap: 10,
+  },
+  notifSubMuted: {
+    opacity: 0.45,
+  },
+  notifPillRow: { flexDirection: "row", gap: 6, width: "100%" },
+  pill: {
+    flex: 1,
+    paddingVertical: 8,
+    backgroundColor: colors.surface,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: colors.border,
+    borderRadius: 8,
+    alignItems: "center",
+  },
+  pillActive: {
+    backgroundColor: colors.greenDeep,
+    borderColor: "rgba(126,203,90,0.3)",
+  },
+  pillText: { fontSize: 11, fontWeight: "600", color: colors.textMuted },
+  pillTextActive: { color: colors.greenDefault },
+
+  track: {
+    width: 44,
+    height: 26,
+    borderRadius: 13,
+    backgroundColor: colors.surface,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: colors.border,
+    justifyContent: "center",
+    position: "relative",
+  },
+  trackOn: {
+    backgroundColor: colors.greenDeep,
+    borderColor: colors.greenDeep,
+  },
+  thumb: {
+    position: "absolute",
+    left: 3,
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    backgroundColor: "#fff",
+    shadowColor: "#000",
+    shadowOpacity: 0.4,
+    shadowRadius: 4,
+    shadowOffset: { width: 0, height: 1 },
+    elevation: 2,
+  },
+  thumbOn: {
+    transform: [{ translateX: 18 }],
+  },
+
+  supportVersionValue: {
+    fontSize: 12,
+    fontWeight: "500",
+    color: colors.textMuted,
+    textAlign: "right",
+    maxWidth: "42%",
+  },
+  });
+}
+
+export type SettingsScreenStyles = ReturnType<typeof createSettingsScreenStyles>;

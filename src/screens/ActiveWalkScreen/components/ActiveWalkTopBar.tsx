@@ -1,7 +1,7 @@
-import React from "react";
+import React, { useMemo } from "react";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { colors } from "../../../theme";
+import { useThemeColors, type ThemeColors } from "../../../theme";
 
 type Props = {
   isScheduled: boolean;
@@ -10,10 +10,12 @@ type Props = {
 };
 
 export function ActiveWalkTopBar({ isScheduled, onBack, onEdit }: Props) {
+  const colors = useThemeColors();
+  const styles = useMemo(() => createActivewalktopbarStyles(colors), [colors]);
   return (
     <View style={styles.topBar}>
       <TouchableOpacity style={styles.backBtn} onPress={onBack}>
-        <Ionicons name="arrow-back" size={16} color={colors.textSecondary} />
+        <Ionicons name="arrow-back" size={16} color={colors.textMuted} />
         <Text style={styles.backText}>Back</Text>
       </TouchableOpacity>
       <Text style={styles.inProgressLabel}>
@@ -30,7 +32,8 @@ export function ActiveWalkTopBar({ isScheduled, onBack, onEdit }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
+function createActivewalktopbarStyles(colors: ThemeColors) {
+  return StyleSheet.create({
   topBar: {
     flexDirection: "row",
     alignItems: "center",
@@ -50,7 +53,7 @@ const styles = StyleSheet.create({
     borderRadius: 20,
   },
   backText: {
-    color: colors.textSecondary,
+    color: colors.textMuted,
     fontSize: 13,
     fontWeight: "600",
   },
@@ -69,9 +72,10 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
   },
   headerEditText: {
-    color: colors.textSecondary,
+    color: colors.textMuted,
     fontSize: 13,
     fontWeight: "600",
   },
   headerSpacer: { width: 72 },
 });
+}

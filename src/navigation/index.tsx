@@ -2,6 +2,7 @@ import React, { useEffect } from "react";
 import {
   NavigationContainer,
   NavigatorScreenParams,
+  createNavigationContainerRef,
 } from "@react-navigation/native";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
@@ -11,8 +12,10 @@ import {
   AppState,
   AppStateStatus,
 } from "react-native";
-import { colors, design } from "../theme";
+import * as Notifications from "expo-notifications";
+import { useThemeColors } from "../theme";
 import { useAppStore } from "../store";
+import { useSettingsStore } from "../store/settingsStore";
 import Svg, {
   Path,
   Rect,
@@ -35,7 +38,6 @@ import EditClientScreen from "../screens/EditClientScreen";
 import DogDetailScreen from "../screens/DogDetailScreen";
 import EditDogScreen from "../screens/EditDogScreen";
 import SettingsScreen from "../screens/SettingsScreen";
-import SubscriptionsScreen from "../screens/SubscriptionsScreen";
 import HelpFAQScreen from "../screens/HelpFAQScreen";
 import FeedbackScreen from "../screens/FeedbackScreen";
 import AuthNavigator from "./AuthNavigator";
@@ -46,6 +48,12 @@ import {
   getOnboardingCompleted,
   setOnboardingCompleted,
 } from "../lib/onboardingStorage";
+import {
+  configureNotifications,
+  hasNotificationPermissionAsync,
+  syncExpoPushTokenAsync,
+  syncWalkReminderNotificationsAsync,
+} from "../lib/notificationsService";
 
 export type TabParamList = {
   Clients: undefined;
@@ -66,13 +74,19 @@ export type RootStackParamList = {
   AddWalk: { preselectedDateIso?: string } | undefined;
   AddClient: undefined;
   EditClient: { clientId: string };
-  Subscriptions: undefined;
   HelpFAQ: undefined;
   Feedback: undefined;
 };
 
+type GuestStackParamList = {
+  Onboarding: undefined;
+  Auth: undefined;
+};
+
 const Stack = createNativeStackNavigator<RootStackParamList>();
 const Tab = createBottomTabNavigator<TabParamList>();
+const GuestStack = createNativeStackNavigator<GuestStackParamList>();
+const navigationRef = createNavigationContainerRef<RootStackParamList>();
 
 const STROKE = {
   strokeLinecap: "round" as const,
@@ -83,15 +97,14 @@ const STROKE = {
 /** Dual paw “trail” icon — inactive: muted white strokes; active: accent + indicator dot (matches supplied SVG art). */
 function WalkTrailTabIcon({
   size,
-  focused,
+  color,
 }: {
   size: number;
-  focused: boolean;
+  color: string;
 }) {
-  const strokeColor = focused ? colors.greenDefault :colors.textMuted;
   const paw = {
     ...STROKE,
-    stroke: strokeColor,
+    stroke: color,
     strokeWidth: 3,
     fill: "none" as const,
   };
@@ -145,7 +158,7 @@ function TabIcon({
   const s = { ...STROKE, stroke: color, strokeWidth: 1.75 };
   switch (name) {
     case "Walks":
-      return <WalkTrailTabIcon size={size} focused={focused ?? false} />;
+      return <WalkTrailTabIcon size={size} color={color} />;
     case "Clients":
       return (
         <Svg width={size} height={size} viewBox="0 0 24 24">
@@ -192,6 +205,7 @@ const TAB_LABELS: Record<keyof TabParamList, string> = {
 };
 
 function TabNavigator() {
+  const colors = useThemeColors();
   return (
     <Tab.Navigator
       initialRouteName="Walks"
@@ -233,6 +247,7 @@ function TabNavigator() {
 }
 
 function AppNavigator() {
+  const colors = useThemeColors();
   return (
     <Stack.Navigator
       screenOptions={{
@@ -245,7 +260,7 @@ function AppNavigator() {
         name="DogDetail"
         component={DogDetailScreen}
         options={{
-          contentStyle: { backgroundColor: design.colors.surface },
+          contentStyle: { backgroundColor: colors.surface },
         }}
       />
       <Stack.Screen name="ActiveWalk" component={ActiveWalkScreen} />
@@ -254,11 +269,6 @@ function AppNavigator() {
       <Stack.Screen name="AddClient" component={AddClientScreen} />
       <Stack.Screen name="EditClient" component={EditClientScreen} />
       <Stack.Screen name="EditDog" component={EditDogScreen} />
-      <Stack.Screen
-        name="Subscriptions"
-        component={SubscriptionsScreen}
-        options={{ animation: "slide_from_right" }}
-      />
       <Stack.Screen
         name="HelpFAQ"
         component={HelpFAQScreen}
@@ -273,14 +283,104 @@ function AppNavigator() {
   );
 }
 
+function GuestNavigator({
+  onboardingDone,
+  onOnboardingDone,
+}: {
+  onboardingDone: boolean;
+  onOnboardingDone: () => void;
+}) {
+  const colors = useThemeColors();
+  return (
+    <GuestStack.Navigator
+      initialRouteName={onboardingDone ? "Auth" : "Onboarding"}
+      screenOptions={{
+        headerShown: false,
+        contentStyle: { backgroundColor: colors.bg },
+        animation: "slide_from_right",
+      }}>
+      {!onboardingDone ? (
+        <GuestStack.Screen name="Onboarding">
+          {({ navigation }) => (
+            <OnboardingNavigator
+              onDone={() => {
+                onOnboardingDone();
+                navigation.replace("Auth");
+              }}
+            />
+          )}
+        </GuestStack.Screen>
+      ) : null}
+      <GuestStack.Screen name="Auth" component={AuthNavigator} />
+    </GuestStack.Navigator>
+  );
+}
+
 export default function Navigation() {
+  const colors = useThemeColors();
   const { session, loading, setSession } = useAuthStore();
   const loadClients = useAppStore((s) => s.loadClients);
   const loadWalks = useAppStore((s) => s.loadWalks);
   const clearData = useAppStore((s) => s.clearData);
+  const walks = useAppStore((s) => s.walks);
+  const clients = useAppStore((s) => s.clients);
+  const notificationsEnabled = useSettingsStore((s) => s.notificationsEnabled);
+  const walkReminderOff = useSettingsStore((s) => s.walkReminderOff);
+  const setNotificationsEnabled = useSettingsStore((s) => s.setNotificationsEnabled);
+  const setWalkReminderOff = useSettingsStore((s) => s.setWalkReminderOff);
   const [onboardingDone, setOnboardingDoneState] = React.useState<
     boolean | null
   >(null);
+  const [navigationReady, setNavigationReady] = React.useState(false);
+  const [pendingNotificationWalkId, setPendingNotificationWalkId] =
+    React.useState<string | null>(null);
+  const lastHandledNotificationKeyRef = React.useRef<string | null>(null);
+
+  useEffect(() => {
+    configureNotifications();
+  }, []);
+
+  useEffect(() => {
+    function walkIdFromResponse(
+      response: Notifications.NotificationResponse | null,
+    ): string | null {
+      const data = response?.notification.request.content.data;
+      return typeof data?.walkId === "string" && data.walkId.trim()
+        ? data.walkId
+        : null;
+    }
+
+    function responseKey(
+      response: Notifications.NotificationResponse | null,
+    ): string | null {
+      const identifier = response?.notification.request.identifier;
+      return typeof identifier === "string" && identifier.trim()
+        ? identifier
+        : walkIdFromResponse(response);
+    }
+
+    function handleResponse(response: Notifications.NotificationResponse) {
+      const key = responseKey(response);
+      if (key && lastHandledNotificationKeyRef.current === key) return;
+      if (key) {
+        lastHandledNotificationKeyRef.current = key;
+      }
+
+      const walkId = walkIdFromResponse(response);
+      if (!walkId) return;
+      setPendingNotificationWalkId(walkId);
+    }
+
+    const subscription =
+      Notifications.addNotificationResponseReceivedListener(handleResponse);
+
+    void Notifications.getLastNotificationResponseAsync().then((response) => {
+      if (!response) return;
+      handleResponse(response);
+    });
+
+    return () => subscription.remove();
+  }, []);
 
   useEffect(() => {
     supabase.auth
@@ -316,6 +416,43 @@ export default function Navigation() {
     loadWalks(userId);
   }, [session?.user?.id]);
 
+  useEffect(() => {
+    const userId = session?.user?.id;
+    if (!userId) return;
+
+    void hasNotificationPermissionAsync().then((granted) => {
+      if (granted) return;
+      setNotificationsEnabled(false);
+      setWalkReminderOff(true);
+    });
+
+    void syncExpoPushTokenAsync(userId, false).catch(() => {
+      /* ignore token sync failures until user explicitly enables notifications */
+    });
+  }, [session?.user?.id, setNotificationsEnabled, setWalkReminderOff]);
+
+  useEffect(() => {
+    if (!session?.user?.id) return;
+    void syncWalkReminderNotificationsAsync({
+      walks,
+      clients,
+      notificationsEnabled,
+      walkReminderOff,
+    }).catch(() => {
+      /* ignore local scheduling failures */
+    });
+  }, [session?.user?.id, walks, clients, notificationsEnabled, walkReminderOff]);
+
+  useEffect(() => {
+    if (!session || onboardingDone == null || !pendingNotificationWalkId) return;
+    if (!navigationReady || !navigationRef.isReady()) return;
+
+    navigationRef.navigate("ActiveWalk", {
+      walkId: pendingNotificationWalkId,
+    });
+    setPendingNotificationWalkId(null);
+  }, [session, onboardingDone, pendingNotificationWalkId, navigationReady]);
+
   /** Re-run missed-walk sweep when app returns to foreground (tighter than ~15m background task alone). */
   useEffect(() => {
     const userId = session?.user?.id;
@@ -343,14 +480,15 @@ export default function Navigation() {
   }
 
   return (
-    <NavigationContainer>
+    <NavigationContainer
+      ref={navigationRef}
+      onReady={() => setNavigationReady(true)}>
       {session ? (
         <AppNavigator />
-      ) : onboardingDone ? (
-        <AuthNavigator />
       ) : (
-        <OnboardingNavigator
-          onDone={() => {
+        <GuestNavigator
+          onboardingDone={onboardingDone}
+          onOnboardingDone={() => {
             setOnboardingDoneState(true);
             void setOnboardingCompleted(true);
           }}

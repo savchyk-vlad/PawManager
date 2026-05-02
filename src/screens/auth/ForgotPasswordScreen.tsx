@@ -10,6 +10,7 @@ import { AuthStackParamList } from '../../navigation/AuthNavigator';
 import { PrimaryButton, FormField, AuthInput, ErrorBox } from '../../components/auth/AuthComponents';
 import { AuthBackLink } from '../../components/auth/AuthBackLink';
 import { AuthNoticeCard } from '../../components/auth/AuthNoticeCard';
+import { AuthLegalLinks } from '../../components/auth/AuthLegalLinks';
 
 type Nav = NativeStackNavigationProp<AuthStackParamList, 'ForgotPassword'>;
 
@@ -92,6 +93,8 @@ export default function ForgotPasswordScreen() {
               <Text style={s.signInLinkBold}>Sign in</Text>
             </Text>
           </TouchableOpacity>
+
+          <AuthLegalLinks variant="forgot" />
       </FormKeyboardScrollView>
     </SafeAreaView>
   );

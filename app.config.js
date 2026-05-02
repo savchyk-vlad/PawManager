@@ -8,18 +8,13 @@ const { env: p } = parseProjectEnv(projectRoot, { silent: true });
 const e = p || {};
 
 const config = {
-  name: "pawmanager",
+  name: "PawManager",
   slug: "pawmanager",
   version: "1.0.0",
   orientation: "portrait",
   icon: "./assets/icon.png",
   userInterfaceStyle: "light",
   newArchEnabled: true,
-  splash: {
-    image: "./assets/splash-icon.png",
-    resizeMode: "contain",
-    backgroundColor: "#ffffff",
-  },
   scheme: "pawmanager",
   ios: {
     supportsTablet: true,
@@ -39,10 +34,19 @@ const config = {
     favicon: "./assets/favicon.png",
   },
   plugins: [
+    [
+      "expo-splash-screen",
+      {
+        image: "./assets/splash-icon.png",
+        resizeMode: "contain",
+        backgroundColor: "#000000",
+      },
+    ],
     "expo-font",
     "expo-web-browser",
     "expo-apple-authentication",
     "expo-secure-store",
+    "expo-notifications",
     "expo-background-task",
     "@react-native-community/datetimepicker",
   ],

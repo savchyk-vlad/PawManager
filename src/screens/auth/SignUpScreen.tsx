@@ -17,6 +17,7 @@ import {
 import OAuthButtons from "../../components/OAuthButtons";
 import { AuthBackLink } from "../../components/auth/AuthBackLink";
 import { SignUpEmailConfirmation } from "./SignUpScreen/components/SignUpEmailConfirmation";
+import { AuthLegalLinks } from "../../components/auth/AuthLegalLinks";
 
 type Nav = NativeStackNavigationProp<AuthStackParamList, "SignUp">;
 
@@ -155,11 +156,7 @@ export default function SignUpScreen() {
           <OrDivider />
           <OAuthButtons onError={setError} onLoadingChange={setLoading} />
 
-          <Text style={s.terms}>
-            By continuing you agree to our{" "}
-            <Text style={s.termsLink}>Terms</Text> and{" "}
-            <Text style={s.termsLink}>Privacy Policy</Text>
-          </Text>
+          <AuthLegalLinks variant="signup" />
       </FormKeyboardScrollView>
     </SafeAreaView>
   );
@@ -184,13 +181,6 @@ const s = StyleSheet.create({
   },
   subtitle: { fontSize: 15, color: dc.text2 },
   form: { gap: 18 },
-  terms: {
-    textAlign: "center",
-    fontSize: 12,
-    color: dc.text3,
-    lineHeight: 18,
-  },
-  termsLink: { color: dc.accent, fontWeight: "600" },
   signInLink: { textAlign: "center", fontSize: 13, color: dc.text3 },
   signInLinkBold: { fontWeight: "600", color: dc.accent },
   linkBtn: {

@@ -1,12 +1,5 @@
 import React, { useState, useEffect, useRef, useMemo } from "react";
-import {
-  View,
-  Text,
-  TouchableOpacity,
-  StyleSheet,
-  ActivityIndicator,
-  Alert,
-} from "react-native";
+import { View, Text, TouchableOpacity, ActivityIndicator, Alert } from "react-native";
 import { FormKeyboardScrollView } from "../../components/FormKeyboardScrollView";
 import { WalkFormCloseHeader } from "../../components/WalkFormCloseHeader";
 import { WalkScheduleFields } from "../../components/WalkScheduleFields";
@@ -18,17 +11,20 @@ import { format, isValid, parseISO } from "date-fns";
 import { useAppStore } from "../../store";
 import { RootStackParamList } from "../../navigation";
 import { ConfirmDeleteSheet } from "../../components/ConfirmDeleteSheet";
-import { colors } from "../../theme";
-import { TimeTakenModal } from "../../components/TimeTakenModal";
+import { WalkScheduleConflictModal } from "../../components/WalkScheduleConflictModal";
+import { useThemeColors } from "../../theme";
 import { findOverlappingWalk } from "../../lib/schedulingOverlap";
 import { applyFieldsFromWalk } from "./applyFieldsFromWalk";
 import { EditWalkClientSummary } from "./components/EditWalkClientSummary";
 import { EditWalkDangerActions } from "./components/EditWalkDangerActions";
+import { createEditWalkScreenStyles } from "./editWalkScreen.styles";
 
 type Nav = NativeStackNavigationProp<RootStackParamList, "EditWalk">;
 type Route = RouteProp<RootStackParamList, "EditWalk">;
 
 export default function EditWalkScreen() {
+  const colors = useThemeColors();
+  const styles = useMemo(() => createEditWalkScreenStyles(colors), [colors]);
   const navigation = useNavigation<Nav>();
   const route = useRoute<Route>();
   const insets = useSafeAreaInsets();
@@ -306,106 +302,13 @@ export default function EditWalkScreen() {
         }
       />
 
-      {(() => {
-        const w = takenWalkId ? walks.find((x) => x.id === takenWalkId) : null;
-        const c = w ? clients.find((x) => x.id === w.clientId) : null;
-        const dogs =
-          w && c
-            ? c.dogs
-                .filter((d) => w.dogIds.includes(d.id))
-                .map((d) => ({ emoji: d.emoji, name: d.name }))
-            : [];
-        return w && c ? (
-          <TimeTakenModal
-            visible
-            onClose={() => setTakenWalkId(null)}
-            onViewWalk={() => {
-              setTakenWalkId(null);
-              navigation.navigate("ActiveWalk", { walkId: w.id });
-            }}
-            clientName={c.name}
-            dogs={dogs}
-            scheduledAtIso={w.scheduledAt}
-            durationMinutes={w.durationMinutes}
-          />
-        ) : null;
-      })()}
+      <WalkScheduleConflictModal
+        takenWalkId={takenWalkId}
+        walks={walks}
+        clients={clients}
+        navigation={navigation}
+        onDismiss={() => setTakenWalkId(null)}
+      />
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: colors.bg },
-  header: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: colors.border,
-  },
-  backBtn: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: colors.surface,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  headerTitle: { fontSize: 16, fontWeight: "600", color: colors.text },
-  headerSpacer: { width: 36, height: 36 },
-  content: { padding: 16, paddingBottom: 48 },
-  sectionLabel: {
-    fontSize: 11,
-    fontWeight: "600",
-    letterSpacing: 1.2,
-    color: colors.textMuted,
-    marginBottom: 8,
-    marginTop: 20,
-  },
-  card: {
-    backgroundColor: colors.surface,
-    borderRadius: 14,
-    overflow: "hidden",
-  },
-  readOnlyName: {
-    fontSize: 14,
-    fontWeight: "600",
-    color: colors.text,
-    marginBottom: 2,
-    paddingHorizontal: 14,
-    paddingTop: 14,
-  },
-  readOnlyMeta: {
-    fontSize: 12,
-    color: colors.textSecondary,
-    paddingHorizontal: 14,
-    paddingBottom: 14,
-  },
-  saveFull: {
-    marginTop: 28,
-    backgroundColor: colors.greenDeep,
-    borderRadius: 14,
-    paddingVertical: 17,
-    alignItems: "center",
-  },
-  saveFullText: { fontSize: 15, fontWeight: "700", color: "white" },
-  dangerSectionLabel: {
-    fontSize: 11,
-    fontWeight: "600",
-    letterSpacing: 1.1,
-    color: colors.textMuted,
-    marginBottom: 8,
-    marginTop: 28,
-  },
-  cancelWalkBtn: {
-    borderRadius: 14,
-    paddingVertical: 14,
-    alignItems: "center",
-    borderWidth: 1,
-    borderColor: "rgba(224, 64, 64, 0.45)",
-    backgroundColor: "rgba(224, 64, 64, 0.08)",
-  },
-  cancelWalkBtnText: { fontSize: 15, fontWeight: "600", color: "#E87070" },
-});

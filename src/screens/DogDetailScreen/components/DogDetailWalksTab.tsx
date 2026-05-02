@@ -3,7 +3,7 @@ import { View, Text, ScrollView, TouchableOpacity } from "react-native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { Client, Walk } from "../../../types";
 import { RootStackParamList } from "../../../navigation";
-import { colors } from "../../../theme";
+import { useThemeColors } from "../../../theme";
 import { walkCharge } from "../../../lib/walkMetrics";
 import { formatWalkWhen } from "../dogDetailUtils";
 import { Row } from "./Row";
@@ -46,6 +46,7 @@ export function DogDetailWalksTab({
   navigation: Nav;
   allowOpenWalks?: boolean;
 }) {
+  const colors = useThemeColors();
   const hasMoreWalks = dogWalks.length > walkShowCount;
 
   return (

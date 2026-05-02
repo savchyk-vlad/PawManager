@@ -1,7 +1,7 @@
-import React from "react";
+import React, { useMemo } from "react";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { colors } from "../../../theme";
+import { useThemeColors, type ThemeColors } from "../../../theme";
 
 type Props = {
   monthLabel: string;
@@ -9,6 +9,8 @@ type Props = {
 };
 
 export function ScheduleHeader({ monthLabel, onAddPress }: Props) {
+  const colors = useThemeColors();
+  const styles = useMemo(() => createScheduleheaderStyles(colors), [colors]);
   return (
     <View style={styles.header}>
       <View>
@@ -22,7 +24,8 @@ export function ScheduleHeader({ monthLabel, onAddPress }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
+function createScheduleheaderStyles(colors: ThemeColors) {
+  return StyleSheet.create({
   header: {
     paddingHorizontal: 22,
     paddingTop: 8,
@@ -42,3 +45,4 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
 });
+}

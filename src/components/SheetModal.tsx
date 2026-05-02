@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useMemo } from "react";
 import {
   View,
   Text,
@@ -11,7 +11,7 @@ import {
   Platform,
   ScrollView,
 } from "react-native";
-import { colors } from "../theme";
+import { useThemeColors, type ThemeColors } from "../theme";
 
 export type SheetModalProps = {
   visible: boolean;
@@ -39,6 +39,8 @@ export function SheetModal({
   children,
   animationType = "fade",
 }: SheetModalProps) {
+  const colors = useThemeColors();
+  const s = useMemo(() => createSheetModalStyles(colors), [colors]);
   const f = useDmSans;
   const titleStyle = [s.title, f && { fontFamily: "DMSans_700Bold" }];
   const hintStyle = [s.hint, f && { fontFamily: "DMSans_400Regular" }];
@@ -93,7 +95,8 @@ export function SheetModal({
   );
 }
 
-const s = StyleSheet.create({
+function createSheetModalStyles(colors: ThemeColors) {
+  return StyleSheet.create({
   wrap: {
     flex: 1,
     justifyContent: "center",
@@ -169,3 +172,4 @@ const s = StyleSheet.create({
     color: colors.greenText,
   },
 });
+}

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, {useEffect, useState, useMemo} from "react";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
@@ -7,7 +7,7 @@ import { RootStackParamList } from "../../../navigation";
 import { useAppStore } from "../../../store";
 import { Walk } from "../../../types";
 import { DogEmojiStack } from "../../../components/DogEmojiStack";
-import { colors } from "../../../theme";
+import { useThemeColors, type ThemeColors } from "../../../theme";
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
 
@@ -29,7 +29,7 @@ function formatElapsed(seconds: number) {
 
 type Props = { walk: Walk };
 
-function badgeBorderColor(progressPct: number) {
+function badgeBorderColor(progressPct: number, colors: ThemeColors) {
   if (!Number.isFinite(progressPct)) return colors.greenDefault;
   if (progressPct > 100) return colors.redDefault;
   if (progressPct >= 80) return colors.amberDefault;
@@ -37,6 +37,8 @@ function badgeBorderColor(progressPct: number) {
 }
 
 export function ActiveWalkCard({ walk }: Props) {
+  const colors = useThemeColors();
+  const styles = useMemo(() => createActivewalkcardStyles(colors), [colors]);
   const navigation = useNavigation<Nav>();
   const { clients } = useAppStore();
   const client = clients.find((c) => c.id === walk.clientId);
@@ -65,7 +67,7 @@ export function ActiveWalkCard({ walk }: Props) {
 
   const plannedSeconds = Math.max(1, walk.durationMinutes) * 60;
   const progressPct = Math.min((elapsed / plannedSeconds) * 100, 999);
-  const badgeBorder = badgeBorderColor(progressPct);
+  const badgeBorder = badgeBorderColor(progressPct, colors);
 
   return (
     <TouchableOpacity
@@ -95,7 +97,8 @@ export function ActiveWalkCard({ walk }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
+function createActivewalkcardStyles(colors: ThemeColors) {
+  return StyleSheet.create({
   card: {
     backgroundColor: colors.greenDeep,
     borderRadius: 24,
@@ -153,3 +156,4 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
 });
+}

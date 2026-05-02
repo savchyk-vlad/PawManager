@@ -8,7 +8,7 @@ import { useAppStore } from "../../../store";
 import { RootStackParamList } from "../../../navigation";
 import { Client, Dog, Walk } from "../../../types";
 import { walkCharge } from "../../../lib/walkMetrics";
-import { colors } from "../../../theme";
+import { useThemeColors } from "../../../theme";
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
 
@@ -41,6 +41,7 @@ export function DogCard({
   clientId: string;
   styles: any;
 }) {
+  const colors = useThemeColors();
   const navigation = useNavigation<Nav>();
   const walks = useAppStore((st) => st.walks);
   const doneWalks = walks.filter((w) => w.dogIds.includes(dog.id) && w.status === "done");
@@ -156,6 +157,7 @@ export function WalkRow({
   client: Client;
   styles: any;
 }) {
+  const colors = useThemeColors();
   const billTotal = walkCharge(walk, client);
   const navigation = useNavigation<Nav>();
   const date = new Date(walk.scheduledAt);

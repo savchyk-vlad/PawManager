@@ -2,6 +2,7 @@ import React from "react";
 import { View, Text, ScrollView, TouchableOpacity, Linking } from "react-native";
 import { DangerZoneAction } from "../../../components/DangerZoneAction";
 import { Client, Dog } from "../../../types";
+import { formatClientAddressSingleLine, formatClientAddressMultiline } from "../../../lib/clientAddress";
 import { Row } from "./Row";
 
 type FontSet = {
@@ -112,16 +113,16 @@ export function DogDetailProfileTab({
               styles={styles}
             />
           )}
-          {client.address ? (
+          {formatClientAddressSingleLine(client.address).trim() ? (
             <TouchableOpacity
               onPress={() => {
-                const addr = encodeURIComponent(client.address);
+                const addr = encodeURIComponent(formatClientAddressSingleLine(client.address).trim());
                 Linking.openURL(`maps://maps.google.com/maps?daddr=${addr}`);
               }}>
               <View style={styles.infoRow}>
                 <Text style={[styles.ik, { fontFamily: font.regular }]}>Address</Text>
-                <Text style={[styles.ivLink, { fontFamily: font.medium }]} numberOfLines={2}>
-                  {`${client.address} →`}
+                <Text style={[styles.ivLink, { fontFamily: font.medium }]} numberOfLines={3}>
+                  {`${formatClientAddressMultiline(client.address)} →`}
                 </Text>
               </View>
             </TouchableOpacity>

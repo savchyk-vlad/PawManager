@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, {useState, useMemo} from "react";
 import { View, TouchableOpacity, StyleSheet, Alert, Text } from "react-native";
 import { FormKeyboardScrollView } from "../../components/FormKeyboardScrollView";
 import { ClientFormScreenHeader } from "../../components/ClientFormScreenHeader";
@@ -7,8 +7,15 @@ import { useNavigation } from "@react-navigation/native";
 import { useAppStore } from "../../store";
 import { useAuthStore } from "../../store/authStore";
 import { useSettingsStore } from "../../store/settingsStore";
-import { colors } from "../../theme";
+import { useThemeColors, type ThemeColors } from "../../theme";
 import { AddClientInfoSection } from "./components/AddClientInfoSection";
+import { capitalizePersonOrDogName } from "../../lib/nameFormatting";
+import {
+  emptyClientAddress,
+  normalizeClientAddress,
+  clientRequiredFieldsSatisfied,
+  listMissingClientRequiredFields,
+} from "../../lib/clientAddress";
 
 function formatRateInput(n: number): string {
   if (!Number.isFinite(n) || n < 0) return "";
@@ -16,6 +23,8 @@ function formatRateInput(n: number): string {
 }
 
 export default function AddClientScreen() {
+  const colors = useThemeColors();
+  const s = useMemo(() => createIndexStyles(colors), [colors]);
   const navigation = useNavigation();
   const insets = useSafeAreaInsets();
   const addClient = useAppStore((s) => s.addClient);
@@ -24,22 +33,27 @@ export default function AddClientScreen() {
 
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
-  const [address, setAddress] = useState("");
+  const [address, setAddress] = useState(emptyClientAddress);
   const [keyLocation, setKeyLocation] = useState("");
   const [price, setPrice] = useState(() => formatRateInput(useSettingsStore.getState().defaultRate));
   const [saving, setSaving] = useState(false);
 
-  const canSave = Boolean(name.trim());
+  const canSave = clientRequiredFieldsSatisfied(name, phone, address);
 
   const handleSave = async () => {
-    if (!canSave || saving || !user) return;
+    const missing = listMissingClientRequiredFields(name, phone, address);
+    if (missing.length > 0) {
+      Alert.alert("Missing information", `Please add ${missing.join(", ")}.`);
+      return;
+    }
+    if (saving || !user) return;
     setSaving(true);
     try {
       await addClient(
         {
-          name: name.trim(),
+          name: capitalizePersonOrDogName(name),
           phone: phone.trim(),
-          address: address.trim(),
+          address: normalizeClientAddress(address),
           keyLocation: keyLocation.trim(),
           pricePerWalk: parseFloat(price) || 0,
           dogs: [],
@@ -86,7 +100,7 @@ export default function AddClientScreen() {
           price={price}
           onChangeName={setName}
           onChangePhone={setPhone}
-          onChangeAddress={setAddress}
+          onChangeAddress={(patch) => setAddress((a) => ({ ...a, ...patch }))}
           onChangeKeyLocation={setKeyLocation}
           onChangePrice={setPrice}
           defaultRatePlaceholder={defaultHint}
@@ -101,7 +115,8 @@ export default function AddClientScreen() {
   );
 }
 
-const s = StyleSheet.create({
+function createIndexStyles(colors: ThemeColors) {
+  return StyleSheet.create({
   safe: { flex: 1, backgroundColor: colors.bg },
 
   header: {
@@ -165,3 +180,4 @@ const s = StyleSheet.create({
   },
   saveFullBtnText: { fontSize: 15, fontWeight: "700", color: "white" },
 });
+}

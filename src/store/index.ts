@@ -14,12 +14,13 @@ import {
 import {
   createWalk,
   fetchWalks,
-  markClientWalksPaid,
   markClientWalksNoPay,
   updateWalk,
   CreateWalkInput,
 } from '../lib/walksService';
 import { useAuthStore } from './authStore';
+import { capitalizePersonOrDogName } from '../lib/nameFormatting';
+import { maybePromptForFirstCompletedWalkReview } from '../lib/reviewPrompt';
 
 function getCurrentUserId() {
   return useAuthStore.getState().user?.id ?? useAuthStore.getState().session?.user.id ?? null;
@@ -53,7 +54,16 @@ interface AppState {
   loadClients: (userId: string) => Promise<void>;
   loadWalks: (userId: string) => Promise<void>;
   addClient: (client: Omit<Client, 'id'>, userId: string) => Promise<void>;
-  updateClient: (clientId: string, fields: { name: string; address: string; phone: string; keyLocation: string; pricePerWalk: number }) => Promise<void>;
+  updateClient: (
+    clientId: string,
+    fields: {
+      name: string;
+      address: Client['address'];
+      phone: string;
+      keyLocation: string;
+      pricePerWalk: number;
+    },
+  ) => Promise<void>;
   addDogToClient: (clientId: string, dog: Omit<Dog, 'id'>) => Promise<Dog>;
   updateDogOnClient: (
     clientId: string,
@@ -68,8 +78,7 @@ interface AppState {
   // Walks — Supabase-backed
   startWalk: (walkId: string) => Promise<void>;
   finishWalk: (walkId: string, notes?: string) => Promise<void>;
-  markClientPaid: (clientId: string) => Promise<void>;
-  markWalkPaid: (walkId: string) => Promise<void>;
+  markWalkPaid: (walkId: string, paymentMethod?: string) => Promise<void>;
   markWalkNoPay: (walkId: string) => Promise<void>;
   markClientNoPay: (clientId: string) => Promise<void>;
   addWalk: (walk: CreateWalkInput) => Promise<void>;
@@ -219,7 +228,7 @@ export const useAppStore = create<AppState>((set, get) => ({
     }));
     const payload: Omit<Dog, 'id'> = {
       ...dog,
-      name: dog.name.trim(),
+      name: capitalizePersonOrDogName(dog.name),
       breed: dog.breed.trim(),
       traits: traitsClean,
     };
@@ -346,6 +355,7 @@ export const useAppStore = create<AppState>((set, get) => ({
   finishWalk: async (walkId, notes) => {
     const prev = get().walks;
     const walkToFinish = prev.find((walk) => walk.id === walkId);
+    const hadCompletedWalksBefore = prev.some((walk) => walk.status === 'done');
     const startedAt = walkToFinish?.startedAt ? new Date(walkToFinish.startedAt).getTime() : null;
     const finishedAt = new Date().toISOString();
     const actualMins = startedAt ? Math.round((Date.now() - startedAt) / 60000) : undefined;
@@ -373,6 +383,9 @@ export const useAppStore = create<AppState>((set, get) => ({
         actualDurationMinutes: actualMins ?? null,
         notes: notes ?? prev.find((walk) => walk.id === walkId)?.notes ?? '',
       });
+      if (!hadCompletedWalksBefore) {
+        void maybePromptForFirstCompletedWalkReview();
+      }
     } catch (e: any) {
       set({
         walks: prev,
@@ -384,25 +397,7 @@ export const useAppStore = create<AppState>((set, get) => ({
     }
   },
 
-  markClientPaid: async (clientId) => {
-    const prev = get().walks;
-    set((state) => ({
-      walks: state.walks.map((walk) =>
-        walk.clientId === clientId && walk.paymentStatus === 'unpaid' && walk.status === 'done'
-          ? { ...walk, paymentStatus: 'paid' }
-          : walk
-      ),
-    }));
-
-    try {
-      await markClientWalksPaid(clientId);
-    } catch (e: any) {
-      set({ walks: prev, walksError: e.message });
-      throw e;
-    }
-  },
-
-  markWalkPaid: async (walkId) => {
+  markWalkPaid: async (walkId, paymentMethod) => {
     const prev = get().walks;
     const target = prev.find((walk) => walk.id === walkId);
     if (!target) throw new Error('Walk not found.');
@@ -411,12 +406,17 @@ export const useAppStore = create<AppState>((set, get) => ({
 
     set((state) => ({
       walks: state.walks.map((walk) =>
-        walk.id === walkId ? { ...walk, paymentStatus: 'paid' } : walk
+        walk.id === walkId
+          ? { ...walk, paymentStatus: 'paid', paymentMethod: paymentMethod?.trim() || undefined }
+          : walk
       ),
     }));
 
     try {
-      await updateWalk(walkId, { paymentStatus: 'paid' });
+      await updateWalk(walkId, {
+        paymentStatus: 'paid',
+        paymentMethod: paymentMethod?.trim() || null,
+      });
     } catch (e: any) {
       set({ walks: prev, walksError: e.message });
       throw e;
@@ -432,12 +432,12 @@ export const useAppStore = create<AppState>((set, get) => ({
 
     set((state) => ({
       walks: state.walks.map((walk) =>
-        walk.id === walkId ? { ...walk, paymentStatus: 'no_pay' } : walk
+        walk.id === walkId ? { ...walk, paymentStatus: 'no_pay', paymentMethod: undefined } : walk
       ),
     }));
 
     try {
-      await updateWalk(walkId, { paymentStatus: 'no_pay' });
+      await updateWalk(walkId, { paymentStatus: 'no_pay', paymentMethod: null });
     } catch (e: any) {
       set({ walks: prev, walksError: e.message });
       throw e;

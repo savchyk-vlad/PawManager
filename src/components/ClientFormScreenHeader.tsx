@@ -1,7 +1,7 @@
 import React from "react";
 import { View, Text, TouchableOpacity, ActivityIndicator } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { colors } from "../theme";
+import { useThemeColors } from "../theme";
 
 type Styles = {
   header: object;
@@ -29,7 +29,7 @@ export function ClientFormScreenHeader({
   return (
     <View style={styles.header}>
       <TouchableOpacity style={styles.closeBtn} onPress={onClose}>
-        <Ionicons name="close" size={20} color={colors.text} />
+        <Ionicons name="close" size={20} color="rgba(255,255,255,0.68)" />
       </TouchableOpacity>
       <Text style={styles.headerTitle}>{title}</Text>
       <TouchableOpacity

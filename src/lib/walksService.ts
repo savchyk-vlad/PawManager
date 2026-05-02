@@ -26,6 +26,7 @@ interface DbWalk {
   duration_minutes: number;
   status: Walk['status'];
   payment_status: Walk['paymentStatus'];
+  payment_method: string | null;
   actual_duration_minutes: number | null;
   notes: string;
   started_at: string | null;
@@ -72,6 +73,7 @@ function mapWalk(row: DbWalk): Walk {
     durationMinutes: row.duration_minutes,
     status: row.status,
     paymentStatus: row.payment_status,
+    paymentMethod: row.payment_method ?? undefined,
     ...(perDog != null
       ? { perDogPrices: perDog }
       : {
@@ -92,7 +94,7 @@ export async function fetchWalks(userId: string): Promise<Walk[]> {
     .from('walks')
     .select(`
       id, user_id, client_id, scheduled_at, duration_minutes, status, payment_status,
-      actual_duration_minutes, notes, started_at, finished_at, price_per_walk_override,
+      payment_method, actual_duration_minutes, notes, started_at, finished_at, price_per_walk_override,
       per_dog_prices,
       walk_dogs ( dog_id )
     `)
@@ -166,6 +168,7 @@ export async function updateWalk(
   fields: Partial<{
     status: Walk['status'];
     paymentStatus: Walk['paymentStatus'];
+    paymentMethod: Walk['paymentMethod'] | null;
     actualDurationMinutes: number | null;
     notes: string;
     startedAt: string | null;
@@ -183,6 +186,7 @@ export async function updateWalk(
 
   if (fields.status !== undefined) payload.status = fields.status;
   if (fields.paymentStatus !== undefined) payload.payment_status = fields.paymentStatus;
+  if (fields.paymentMethod !== undefined) payload.payment_method = fields.paymentMethod;
   if (fields.actualDurationMinutes !== undefined) payload.actual_duration_minutes = fields.actualDurationMinutes;
   if (fields.notes !== undefined) payload.notes = fields.notes;
   if (fields.startedAt !== undefined) payload.started_at = fields.startedAt;
@@ -217,17 +221,6 @@ export async function updateWalk(
   }
 
   const { error } = await supabase.from('walks').update(payload).eq('id', walkId);
-  if (error) throw new Error(error.message);
-}
-
-export async function markClientWalksPaid(clientId: string): Promise<void> {
-  const { error } = await supabase
-    .from('walks')
-    .update({ payment_status: 'paid' })
-    .eq('client_id', clientId)
-    .eq('payment_status', 'unpaid')
-    .eq('status', 'done');
-
   if (error) throw new Error(error.message);
 }
 

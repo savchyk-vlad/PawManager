@@ -16,7 +16,7 @@ import { useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { useAppStore } from "../../store";
 import { RootStackParamList } from "../../navigation";
-import { colors } from "../../theme";
+import { useThemeColors, type ThemeColors } from "../../theme";
 import { FloatingActionButton } from "../../components/FloatingActionButton";
 import {
   ClientsSearchHeader,
@@ -27,6 +27,8 @@ import { ClientsPagedLists } from "./components/ClientsPagedLists";
 type Nav = NativeStackNavigationProp<RootStackParamList>;
 
 export default function ClientsScreen() {
+  const colors = useThemeColors();
+  const s = useMemo(() => createIndexStyles(colors), [colors]);
   const navigation = useNavigation<Nav>();
   const insets = useSafeAreaInsets();
   const { width: screenW } = useWindowDimensions();
@@ -142,7 +144,8 @@ export default function ClientsScreen() {
   );
 }
 
-const s = StyleSheet.create({
+function createIndexStyles(colors: ThemeColors) {
+  return StyleSheet.create({
   safe: { flex: 1, backgroundColor: colors.bg },
 
   sectionLabel: {
@@ -158,6 +161,8 @@ const s = StyleSheet.create({
     backgroundColor: colors.greenDeep,
     paddingHorizontal: 14,
     paddingTop: 14,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.bg,
   },
   searchBar: {
     flexDirection: "row",
@@ -167,6 +172,7 @@ const s = StyleSheet.create({
     borderRadius: 22,
     paddingHorizontal: 14,
     paddingVertical: 10,
+    marginBottom: 12,
   },
   searchField: { flex: 1, paddingHorizontal: 0, paddingVertical: 0 },
   searchFieldInput: {
@@ -183,14 +189,12 @@ const s = StyleSheet.create({
   tabs: {
     flexDirection: "row",
     backgroundColor: colors.greenDeep,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: "rgba(255,255,255,0.08)",
     gap: 4,
   },
   tab: {
     paddingHorizontal: 12,
     paddingTop: 16,
-    paddingBottom: 10,
+    paddingBottom: 12,
     alignItems: "center",
     position: "relative",
   },
@@ -331,3 +335,4 @@ const s = StyleSheet.create({
   empty: { alignItems: "center", paddingTop: 80 },
   emptyText: { fontSize: 14, color: colors.textMuted },
 });
+}

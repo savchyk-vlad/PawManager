@@ -1,9 +1,9 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { Client, Dog, Walk } from '../../../types';
-import { colors } from '../../../theme';
+import { useThemeColors, type ThemeColors } from '../../../theme';
 import { formatWhen } from '../activeWalkUtils';
 
 type Props = {
@@ -23,6 +23,8 @@ export function CancelledWalkView({
   bottomInset,
   onBack,
 }: Props) {
+  const colors = useThemeColors();
+  const styles = useMemo(() => createCancelledwalkviewStyles(colors), [colors]);
   const endNames = dogsRow.map((d) => d.name).join(' & ') || 'Walk';
   const endEmoji = dogsRow[0]?.emoji ?? '🐕';
 
@@ -47,7 +49,7 @@ export function CancelledWalkView({
             onPress={onBack}
             hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
           >
-            <Ionicons name="arrow-back" size={16} color="white" />
+            <Ionicons name="arrow-back" size={16} color={colors.textMuted} />
             <Text style={styles.backText}>Back</Text>
           </TouchableOpacity>
           <View style={{ flex: 1 }} />
@@ -82,7 +84,8 @@ export function CancelledWalkView({
   );
 }
 
-const styles = StyleSheet.create({
+function createCancelledwalkviewStyles(colors: ThemeColors) {
+  return StyleSheet.create({
   container: {
     paddingHorizontal: 20,
   },
@@ -100,7 +103,7 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     borderRadius: 999,
   },
-  backText: { fontSize: 13, fontWeight: '500', color: 'white' },
+  backText: { fontSize: 13, fontWeight: '500', color: colors.textMuted },
   avatar: {
     width: 88,
     height: 88,
@@ -181,3 +184,4 @@ const styles = StyleSheet.create({
     lineHeight: 20,
   },
 });
+}

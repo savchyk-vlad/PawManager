@@ -5,11 +5,15 @@ import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import Navigation from './src/navigation';
+import { useAppearance } from './src/theme';
 import MissingConfigScreen from './src/screens/MissingConfigScreen';
 import { isSupabaseConfigured } from './src/lib/expoEnv';
 import { supabase } from './src/lib/supabase';
 
 export default function App() {
+  const appearance = useAppearance();
+  const statusBarStyle = appearance === 'dark' ? 'light' : 'dark';
+
   useEffect(() => {
     if (!isSupabaseConfigured) return;
     const subscription = AppState.addEventListener('change', (state: AppStateStatus) => {
@@ -35,7 +39,7 @@ export default function App() {
     return (
       <GestureHandlerRootView style={{ flex: 1 }}>
         <SafeAreaProvider>
-          <StatusBar style="dark" />
+          <StatusBar style={statusBarStyle} />
           <MissingConfigScreen />
         </SafeAreaProvider>
       </GestureHandlerRootView>
@@ -45,7 +49,7 @@ export default function App() {
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <SafeAreaProvider>
-        <StatusBar style="dark" />
+        <StatusBar style={statusBarStyle} />
         <Navigation />
       </SafeAreaProvider>
     </GestureHandlerRootView>

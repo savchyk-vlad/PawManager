@@ -8,6 +8,7 @@ import {
   walkDogCount,
 } from './walkMetrics';
 import { Client, Walk } from '../types';
+import { emptyClientAddress } from './clientAddress';
 
 function makeWalk(partial: Partial<Walk>): Walk {
   return {
@@ -31,7 +32,7 @@ test('walkCharge uniform rate multiplies by unique dog count', () => {
   const client = {
     id: 'c1',
     name: 'A',
-    address: '',
+    address: emptyClientAddress(),
     phone: '',
     pricePerWalk: 25,
     keyLocation: '',
@@ -45,7 +46,7 @@ test('walkCharge sums per-dog rates', () => {
   const client = {
     id: 'c1',
     name: 'A',
-    address: '',
+    address: emptyClientAddress(),
     phone: '',
     pricePerWalk: 100,
     keyLocation: '',
@@ -62,7 +63,7 @@ test('walkCharge falls back to client rate for dogs missing from perDogPrices ma
   const client = {
     id: 'c1',
     name: 'A',
-    address: '',
+    address: emptyClientAddress(),
     phone: '',
     pricePerWalk: 30,
     keyLocation: '',
@@ -88,7 +89,7 @@ test('effectivePricePerWalk uses override when set (uniform)', () => {
   const client = {
     id: 'c1',
     name: 'A',
-    address: '',
+    address: emptyClientAddress(),
     phone: '',
     pricePerWalk: 20,
     keyLocation: '',
@@ -103,7 +104,7 @@ test('effectivePricePerWalk uses override when set (uniform)', () => {
 
 test('calcEarnedToday respects price override on a walk', () => {
   const clients: Client[] = [
-    { id: 'c1', name: 'A', address: '', phone: '', pricePerWalk: 20, keyLocation: '', dogs: [] },
+    { id: 'c1', name: 'A', address: emptyClientAddress(), phone: '', pricePerWalk: 20, keyLocation: '', dogs: [] },
   ];
   const now = new Date('2026-04-27T12:00:00.000Z');
   const walks: Walk[] = [
@@ -120,7 +121,7 @@ test('calcEarnedToday respects price override on a walk', () => {
 
 test('calcEarnedToday sums per-dog pricing', () => {
   const clients: Client[] = [
-    { id: 'c1', name: 'A', address: '', phone: '', pricePerWalk: 10, keyLocation: '', dogs: [] },
+    { id: 'c1', name: 'A', address: emptyClientAddress(), phone: '', pricePerWalk: 10, keyLocation: '', dogs: [] },
   ];
   const now = new Date('2026-04-27T12:00:00.000Z');
   const walks: Walk[] = [
@@ -137,8 +138,8 @@ test('calcEarnedToday sums per-dog pricing', () => {
 
 test('calcEarnedToday sums done-today walk charges by client price', () => {
   const clients: Client[] = [
-    { id: 'c1', name: 'A', address: '', phone: '', pricePerWalk: 20, keyLocation: '', dogs: [] },
-    { id: 'c2', name: 'B', address: '', phone: '', pricePerWalk: 30, keyLocation: '', dogs: [] },
+    { id: 'c1', name: 'A', address: emptyClientAddress(), phone: '', pricePerWalk: 20, keyLocation: '', dogs: [] },
+    { id: 'c2', name: 'B', address: emptyClientAddress(), phone: '', pricePerWalk: 30, keyLocation: '', dogs: [] },
   ];
   const now = new Date('2026-04-27T12:00:00.000Z');
   const walks: Walk[] = [
